@@ -1,0 +1,59 @@
+{
+    "signin": {
+        "header": "Iniciar sessão",
+        "cpf/cnpj": "CPF/CNPJ",
+        "password": "Senha",
+        "keepLogged": "Manter conectado",
+        "forgotPassword": "Esqueceu sua senha?",
+        "invalidCpfOrCnpj": "O CPF/CNPJ não está no tamanho certo, digite-o corretamente.",
+        "passwordInvalid": "Sua senha deve conter no mínimo 4 caracteres.",
+        "InvalidCrentials": "Algo deu errado. Por favor, verifique as suas credenciais e tente novamente!",
+        "RequiredField": "Campo obrigatório",
+        "firstAccess": "Primeiro acesso?",
+        "submit": "Entrar"
+    },
+    "firstAccess": {
+        "title": "Primeiro acesso",
+        "cpf/cnpj": "Digite o seu CPF/CNPJ",
+        "invalidCpfOrCnpj": "O CPF/CNPJ não está no tamanho certo, digite-o corretamente.",
+        "RequiredField": "Campo obrigatório!",
+        "password": "Cadastre uma senha",
+        "confirmPassword": "Confirme sua senha",
+        "userSalute": "Olá, ",
+        "passwordInvalid": "Sua senha deve conter no mínimo 4 caracteres.",
+        "passwordsDoNotMatch": "As senhas não são iguais. Por favor, verifique e tente novamente.",
+        "userNotFound": "Não encontramos seu cadastro em nossa base de dados.",
+        "userNotFound2": " Ainda não possui um plano? ",
+        "userNotFound3": "Clique aqui",
+        "userNotFound4": " e assine um agora mesmo.",
+        "termsAndConditions": "Eu li e concordo com os ",
+        "termsAndConditions2": "termos de uso e privacidade.",
+        "temsAndConditionsError": "Você precisa concordar com os termos de uso e privacidade para continuar.",
+        "submitPassword": "Cadastrar",
+        "nextStep": "Continuar"
+
+    },
+    "forgotPassword": {
+        "title": "Recuperar senha",
+        "cpf/cnpj": "Digite o seu CPF/CNPJ",
+        "nextStep": "Continuar",
+        "userNotFound": "Não encontramos seu cadastro em nossa base de dados.",
+        "userNotFound2": " Ainda não possui um plano? ",
+        "userNotFound3": "Clique aqui",
+        "userNotFound4": " e assine um agora mesmo.",
+        "codeEmailSend": "Um código de verificação foi enviado para a sua caixa de Email.",
+        "verificationCodeLabel": "Digite o código de 6 dígitos",
+        "dontReceivedCode": "Não recebeu o código?",
+        "resendCode": "Reenviar código",
+        "close": "Fechar",
+        "emailResend": "Um novo código de verificação foi enviado para o seu email.",
+        "verificationCode": {
+            "RequiredField": "Campo obrigatório!",
+            "lengthInvalid": "O código deve ter 6 dígitos."
+        },
+        "newPassword": "Cadastre uma nova senha",
+        "confirmNewPassword": "Confirme sua nova senha",
+        "submitPassword": "Cadastrar",
+        "verificationCodeError": "O código inserido está errado ou é inválido."
+    }
+}
