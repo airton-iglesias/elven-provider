@@ -1,0 +1,44 @@
+# Consulta no MikWeb para obter o identificador do roteador nos dados do usuário
+#Verificar depois a api pra implementar as fáturas via essa api
+
+curl --request GET \
+  --url 'https://api.mikweb.com.br/v1/admin/customers/?search=00987732242' \
+  --header 'Authorization: Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ' \
+  --header 'Content-Type: application/json' \
+  --header 'User-Agent: insomnia/10.1.1'
+
+
+# Requisição para o servidor ACS para atualizar o roteador e obter os dispositivos conectados
+
+curl --request POST \
+  --url 'http://192.168.100.214:7557/devices/00259E-HG8145V5%252DV2-48575443911C23AD/tasks?connection_request=' \
+  --header 'Content-Type: application/json' \
+  --header 'User-Agent: insomnia/10.1.1' \
+  --data '{"name": "refreshObject", "objectName": "InternetGatewayDevice.LANDevice.*.Hosts.Host"}'
+
+
+
+#Requsição para alterar o nome e senha do roteador pelo servidor do ACS
+#Você pode alterar o 1 e o 5 antes do SSID para renomear todas as redes disponíveis no roteador, mas isso vai unificar as redes se houver a frequência 2.4ghz e 5ghz separadas, verifica com o felipe se tem problema
+
+curl --request POST \
+  --url 'http://192.168.100.214:7557/devices/00259E-HG8145V5%252DV2-48575443911C23AD/tasks?connection_request=' \
+  --header 'Content-Type: application/json' \
+  --header 'User-Agent: insomnia/10.1.1' \
+  --data '{
+  "name": "setParameterValues",
+  "parameterValues": [
+    ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID", "Alterado_via_API", "xsd:string"],
+		["InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID", "Alterado_via_API_5G", "xsd:string"],
+		["InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.PreSharedKey.1.KeyPassphrase", "nova_senha_aqui", "xsd:string"]
+  ]
+}'
+
+
+#Requisição de consulta do roteador via servidor ACS
+
+curl --request GET \
+  --url 'http://192.168.100.214:7557/devices/?=' \
+  --header 'Content-Type: application/json' \
+  --header 'User-Agent: insomnia/10.1.1' \
+  --data '{"device": "48575443911C23AD"}'
