@@ -14,6 +14,7 @@ import TopBar from '@/components/topbar';
 import InformativeModal from '@/components/informativeModal';
 import WifiPasswordModal from '@/components/wifiPasswordModal';
 import WifiNameModal from '@/components/wifiNameModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Wifi() {
 
@@ -26,18 +27,55 @@ export default function Wifi() {
     const [isModalNameVisible, setIsModalNameVisible] = useState<boolean>(false);
     const [isNameChanging, setIsNameChanging] = useState<boolean>(false);
 
-    const changePassword = (password: string) => {
-        setIsPasswordChanging(true);
 
-        //fazer a requisição aqui
-        //{...}
+    async function getDeviceId(serial: string) {
+        const param = { device: serial };
+        const url = `http://192.168.0.10:7557/devices/?device=${param.device}`;
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            });
+            if (!response.ok) {
+                throw new Error('Erro ao fazer a requisição');
+            }
+            const data = await response.json();
+            if ( data.length > 0) {
+                return data[0]._id;
+            }
+            else{
+                throw new Error('Erro ao fazer a requisição');
+            }
+        } catch (error) {
+            throw new Error('Erro ao fazer a requisição');
+        }
+    }
 
-        setTimeout(() => {
-            setIsPasswordChanging(false)
-            setIsModalPasswordVisible(false)
-            setInformativeModalText('A senha do seu wi-fi foi alterada com sucesso.')
-            setIsInformativeModalVisible(true)
-        }, 3000)
+    function setNewPassword(id: any, password: string) {
+        throw new Error('Function not implemented.');
+    }
+    
+
+    const changePassword = async (password: string) => {
+        
+        try{
+            setIsPasswordChanging(true);
+            const storedData = await AsyncStorage.getItem('customerData');
+            const serial = "48575443911C23AD";
+            const id = await getDeviceId(serial);
+            setNewPassword(id, password);
+
+        }
+        catch(error)
+        {
+            setIsModalPasswordVisible(false);
+            setInformativeModalText('A senha do seu wi-fi foi alterada com sucesso.');
+            setIsInformativeModalVisible(true);
+            setIsPasswordChanging(true);
+        }
+        
     }
 
     const changeName = (name: string) => {

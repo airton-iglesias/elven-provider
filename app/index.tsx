@@ -15,7 +15,7 @@ export default function SigninScreen() {
     // State variables for UI 
     const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [requestError, setRequestError] = useState<boolean>(true);
+    const [requestError, setRequestError] = useState<boolean>(false);
 
     // React Hook Form setup
     const signInSchema = React.useMemo(() => getSignInSchema(), []);
@@ -40,7 +40,7 @@ export default function SigninScreen() {
                 </View>
             </View>
 
-            {requestError && ( <RequestError messageParts={[{ text: 'Mensagem de erro' }]}/>)}
+            {requestError && ( <RequestError messageParts={[{ text: 'CPF ou CNPJ não encontrado.' }]}/>)}
 
             <View style={styles.formContainer}>
                 <Text style={styles.headerText}>CPF/CNPJ</Text>

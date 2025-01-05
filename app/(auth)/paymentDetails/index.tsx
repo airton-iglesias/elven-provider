@@ -46,7 +46,7 @@ export default function PaymentDetails() {
 
     useEffect(() => {
         const requestData: InitialData = {
-            status: 'aberto',
+            status: 'pago',
             title: 'Fatura - Fibra 999 Mbps',
             date: '10/2024',
             amount: 'R$ 299,90',

@@ -6,6 +6,7 @@ import { fontSize } from "@/constants/fonts";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "@/constants/colors";
 import { Skeleton } from "moti/skeleton";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface userData {
     name: string;
@@ -26,27 +27,38 @@ export default function Profile() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        const loadUserData = async () => {
+            try {
+                // Carrega os dados salvos no AsyncStorage
+                const storedData = await AsyncStorage.getItem('customerData');
+                if (storedData) {
+                    const result = JSON.parse(storedData);
 
-        // Simulação de requisição de dados
-        const userData: userData = {
-            name: "Airton Pinheiro Iglesias",
-            birthDate: "01/01/1990",
-            cpf: "123.456.789-00",
-            email: "airton@email.com",
-            phone: "(11) 99999-9999",
-            street: "Rua General Carneiro",
-            number: "123",
-            neighborhood: "São Francisco",
-            city: "Manaus",
-            state: "Amazonas",
-            zipCode: "69079-020"
+                    // Preenche os campos com os dados carregados
+                    const userData: userData = {
+                        name: result.full_name,
+                        birthDate: result.birth_date,
+                        cpf: result.cpf_cnpj,
+                        email: result.email,
+                        phone: result.cell_phone_number_1 || result.phone_number,
+                        street: result.street,
+                        number: result.number,
+                        neighborhood: result.neighborhood,
+                        city: result.city,
+                        state: result.state,
+                        zipCode: result.zip_code
+                    };
+
+                    setUser(userData);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados do usuário:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
-
-        setTimeout(() => {
-            setUser(userData);
-            setIsLoading(false);
-        }, 2000);
+        loadUserData();
     }, []);
 
 

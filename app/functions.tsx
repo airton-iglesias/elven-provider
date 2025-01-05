@@ -1,4 +1,5 @@
 import { SignInData } from "@/schemas/authSchemas";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Router } from "expo-router";
 import { Keyboard } from "react-native";
 
@@ -10,6 +11,10 @@ const KeyboardListener = (setKeyboardIsVisible: Function) =>{
             showListener.remove();
             hideListener.remove();
         };
+}
+
+function sanitizeCpfCnpj(input: string): string {
+    return input.replace(/[\.\-\/]/g, '');
 }
 
 const handleInputChange = (text: string) => {
@@ -32,27 +37,45 @@ const handleInputChange = (text: string) => {
 };
 
 
-
-const onSubmit = async (data: SignInData, router: Router,requestError: boolean, setRequestError: Function,
+const onSubmit = async (
+    data: SignInData,
+    router: Router,
+    requestError: boolean,
+    setRequestError: Function,
     setLoading: Function
 ) => {
-    if (requestError) { setRequestError(!requestError); }
-    setLoading(true);
-
-    try {
-        // Make the request to API here. The params is data.email, data.password and isChecked to keep Logged
-
-
-        // The Timeout is to simulate an API call delay, you can remove it when making the API call
-        setTimeout(() => {
-            setLoading(false);
-            router.navigate("/home");
-            return;
-        }, 2000);
+    if (requestError) { 
+        setRequestError(false); 
     }
-    catch (error) {
-        setLoading(false);
+    setLoading(true);
+    try {
+        // Fazendo a requisição para a API
+        const response = await fetch(`https://api.mikweb.com.br/v1/admin/customers/?search=${sanitizeCpfCnpj(data.cpf_cnpj)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+            }
+        });
+        if (!response.ok) {
+            throw new Error("Erro na requisição");
+        }
+        const result = await response.json();
+        if (result.customers && result.customers.length > 0) {
+
+            await AsyncStorage.setItem('customerData', JSON.stringify(result.customers[0]));
+
+            router.navigate({
+                pathname: "/home",
+            });
+        } else {
+            setRequestError(true);
+        }
+    } catch (error) {
+        console.error("Erro:", error);
         setRequestError(true);
+    } finally {
+        setLoading(false);
     }
 };
 

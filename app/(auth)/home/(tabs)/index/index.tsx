@@ -10,6 +10,7 @@ import PlanSkeleton from '@/components/planSkeleton';
 import BillSkeleton from '@/components/billSkeketon';
 import TopBar from '@/components/topbar';
 import BillCard from '@/components/billCard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface PlanDetails {
     title: string;
@@ -40,65 +41,79 @@ export default function Home() {
 
 
     useEffect(() => {
-        // Simulação de requisição
-        const requestData: InitialData = {
-            planDetails: {
-                title: "Fibra - 9999 Mbps",
-                price: "999,99",
-                status: "Bloqueado"
-            },
-            paymentHistory: [
-                {
-                    id: '1',
-                    status: 'aberto',
-                    title: 'Fatura - 10/2024',
-                    date: '10/2024',
-                    amount: 'R$ 999,99',
-                },
-                {
-                    id: '2',
-                    status: 'pago',
-                    title: 'Fatura - 09/2024',
-                    date: '09/2024',
-                    amount: 'R$ 999,99',
-                },
-            ]
+
+        const loadUserData = async () => {
+            try {
+                // Carrega os dados salvos no AsyncStorage
+                const storedData = await AsyncStorage.getItem('customerData');
+                if (storedData) {
+                    const result = JSON.parse(storedData);
+
+                    // Preenche os campos com os dados carregados
+                    const requestData: InitialData = {
+                        planDetails: {
+                            title: `Fibra ${result.plan.name}`,
+                            price: `${result.plan.value}0`,
+                            status: result.status
+                        },
+                        paymentHistory: [
+                            {
+                                id: '1',
+                                status: 'aberto',
+                                title: 'Fatura - 10/2024',
+                                date: '10/2024',
+                                amount: 'R$ 999,99',
+                            },
+                            {
+                                id: '2',
+                                status: 'pago',
+                                title: 'Fatura - 09/2024',
+                                date: '09/2024',
+                                amount: 'R$ 999,99',
+                            },
+                        ]
+                    };
+
+                    setData(requestData);
+
+                    const paymentHistory = requestData.paymentHistory;
+
+                    // Separar faturas abertas e em atraso
+                    const openInvoicesList = paymentHistory.filter(item => item.status === 'aberto');
+                    const overdueInvoicesList = paymentHistory.filter(item => item.status === 'atrasado');
+
+                    setOpenInvoices(openInvoicesList);
+                    setOverdueInvoices(overdueInvoicesList);
+
+                    let current: PaymentHistoryItem | null = null;
+
+                    if (openInvoicesList.length > 0) {
+                        current = openInvoicesList[0];
+                    } else if (overdueInvoicesList.length > 0) {
+                        current = overdueInvoicesList[0];
+                    } else if (paymentHistory.length > 0) {
+                        current = paymentHistory[0]; // Fatura paga mais recente
+                    }
+                    else {
+                        current = {
+                            id: '0',
+                            status: 'pago',
+                            title: requestData.planDetails.title,
+                            date: 'undefined',
+                            amount: 'undefined',
+                        };
+                    }
+
+                    setCurrentInvoice(current);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados do usuário:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
-        setTimeout(() => {
-            setData(requestData);
-            setIsLoading(false);
-
-            const paymentHistory = requestData.paymentHistory;
-
-            // Separar faturas abertas e em atraso
-            const openInvoicesList = paymentHistory.filter(item => item.status === 'aberto');
-            const overdueInvoicesList = paymentHistory.filter(item => item.status === 'atrasado');
-
-            setOpenInvoices(openInvoicesList);
-            setOverdueInvoices(overdueInvoicesList);
-
-            let current: PaymentHistoryItem | null = null;
-
-            if (openInvoicesList.length > 0) {
-                current = openInvoicesList[0];
-            } else if (overdueInvoicesList.length > 0) {
-                current = overdueInvoicesList[0];
-            } else if (paymentHistory.length > 0) {
-                current = paymentHistory[0]; // Fatura paga mais recente
-            }
-            else {
-                current = {
-                    id: '0',
-                    status: 'pago',
-                    title: requestData.planDetails.title,
-                    date: 'undefined',
-                    amount: 'undefined',
-                };
-            }
-
-            setCurrentInvoice(current);
-        }, 2000);
+        loadUserData();
     }, []);
 
     return (

@@ -1,16 +1,21 @@
 import { router } from "expo-router";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { fontSize } from "@/constants/fonts";
 import UserIcon from "@/assets/icons/userIcon";
-import InformationsIcon from "@/assets/icons/informationsIcon";
-import LockIcon from "@/assets/icons/lockIcon";
 import LogoutIcon from "@/assets/icons/logoutIcon";
 import { AppColors } from "@/constants/colors";
 import TopBar from "@/components/topbar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Settings() {
+
+    const handleExit = async () => {
+        await AsyncStorage.removeItem('customerData');
+        router.replace("/");
+    }
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.external.primary }}>
             <TopBar />
@@ -63,7 +68,7 @@ export default function Settings() {
                 </View> */}
 
                 <View style={styles.optionWrapper}>
-                    <TouchableOpacity style={styles.option} activeOpacity={0.7} onPress={() => router.replace("/")}>
+                    <TouchableOpacity style={styles.option} activeOpacity={0.7} onPress={handleExit}>
                         <View style={styles.iconWrapper}>
                             <LogoutIcon />
                         </View>
