@@ -68,7 +68,7 @@ export default function Payment() {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+                        'Authorization': ``
                     }
                 });
 
