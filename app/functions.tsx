@@ -54,7 +54,7 @@ const onSubmit = async (
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': ``
+                'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
             }
         });
         if (!response.ok) {
