@@ -3,14 +3,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Router } from "expo-router";
 import { Keyboard } from "react-native";
 
-const KeyboardListener = (setKeyboardIsVisible: Function) =>{
+const KeyboardListener = (setKeyboardIsVisible: Function) => {
     const showListener = Keyboard.addListener('keyboardDidShow', () => setKeyboardIsVisible(true));
     const hideListener = Keyboard.addListener('keyboardDidHide', () => setKeyboardIsVisible(false));
 
-        return () => {
-            showListener.remove();
-            hideListener.remove();
-        };
+    return () => {
+        showListener.remove();
+        hideListener.remove();
+    };
 }
 
 function sanitizeCpfCnpj(input: string): string {
@@ -44,8 +44,8 @@ const onSubmit = async (
     setRequestError: Function,
     setLoading: Function
 ) => {
-    if (requestError) { 
-        setRequestError(false); 
+    if (requestError) {
+        setRequestError(false);
     }
     setLoading(true);
     try {
@@ -80,4 +80,4 @@ const onSubmit = async (
 };
 
 export default KeyboardListener;
-export { KeyboardListener,  handleInputChange, onSubmit };
+export { KeyboardListener, handleInputChange, onSubmit };

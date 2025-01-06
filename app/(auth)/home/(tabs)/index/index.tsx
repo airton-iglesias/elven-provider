@@ -11,113 +11,81 @@ import BillSkeleton from '@/components/billSkeketon';
 import TopBar from '@/components/topbar';
 import BillCard from '@/components/billCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import InformativeModal from '@/components/informativeModal';
 
-interface PlanDetails {
-    title: string;
-    price: string;
-    status: 'Ativo' | 'Bloqueado';
-}
-
-interface PaymentHistoryItem {
-    id: string;
-    status: 'pago' | 'aberto' | 'atrasado';
-    title: string;
-    date: string;
-    amount: string;
-}
-
-interface InitialData {
-    planDetails: PlanDetails;
-    paymentHistory: PaymentHistoryItem[];
-}
 
 export default function Home() {
-    const [data, setData] = useState<InitialData | null>(null);
+    const [currentInvoice, setCurrentInvoice] = useState<any>(null);
+    const [userDatas, setUserDatas] = useState<any>(null);
+
+    // Variáveis de UI
     const [isLoading, setIsLoading] = useState(true);
+    const [informativeModalText, setInformativeModalText] = useState<string>('');
+    const [isFirstMonth, setIsFirstMonth] = useState<boolean>(false);
+    const [isInformativeModalVisible, setIsInformativeModalVisible] = useState<boolean>(false);
+    const [overdueCount, setOverdueCount] = useState<number>(0);
 
-    const [currentInvoice, setCurrentInvoice] = useState<PaymentHistoryItem | null>(null);
-    const [overdueInvoices, setOverdueInvoices] = useState<PaymentHistoryItem[]>([]);
-    const [openInvoices, setOpenInvoices] = useState<PaymentHistoryItem[]>([]);
+    const filterInvoices = (billings: any[]) => {
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1;
 
+        const filteredBillings = billings.filter((item) => {
+            const [year, month] = item.due_day.split('-').map(Number);
+            return (year < currentYear) || (year === currentYear && month <= currentMonth);
+        });
+
+        return filteredBillings;
+    };
 
     useEffect(() => {
-
-        const loadUserData = async () => {
+        const fetchInitialData = async () => {
             try {
-                // Carrega os dados salvos no AsyncStorage
-                const storedData = await AsyncStorage.getItem('customerData');
-                if (storedData) {
-                    const result = JSON.parse(storedData);
+                setIsLoading(true);
 
-                    // Preenche os campos com os dados carregados
-                    const requestData: InitialData = {
-                        planDetails: {
-                            title: `Fibra ${result.plan.name}`,
-                            price: `${result.plan.value}0`,
-                            status: result.status
-                        },
-                        paymentHistory: [
-                            {
-                                id: '1',
-                                status: 'aberto',
-                                title: 'Fatura - 10/2024',
-                                date: '10/2024',
-                                amount: 'R$ 999,99',
-                            },
-                            {
-                                id: '2',
-                                status: 'pago',
-                                title: 'Fatura - 09/2024',
-                                date: '09/2024',
-                                amount: 'R$ 999,99',
-                            },
-                        ]
-                    };
+                const getData = await AsyncStorage.getItem('customerData');
+                const userStoredDatas = getData ? JSON.parse(getData) : null;
+                setUserDatas(userStoredDatas);
 
-                    setData(requestData);
-
-                    const paymentHistory = requestData.paymentHistory;
-
-                    // Separar faturas abertas e em atraso
-                    const openInvoicesList = paymentHistory.filter(item => item.status === 'aberto');
-                    const overdueInvoicesList = paymentHistory.filter(item => item.status === 'atrasado');
-
-                    setOpenInvoices(openInvoicesList);
-                    setOverdueInvoices(overdueInvoicesList);
-
-                    let current: PaymentHistoryItem | null = null;
-
-                    if (openInvoicesList.length > 0) {
-                        current = openInvoicesList[0];
-                    } else if (overdueInvoicesList.length > 0) {
-                        current = overdueInvoicesList[0];
-                    } else if (paymentHistory.length > 0) {
-                        current = paymentHistory[0]; // Fatura paga mais recente
+                const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings?customer_id=${userStoredDatas.id}&sort_field=due_day&sort_direction=desc`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
                     }
-                    else {
-                        current = {
-                            id: '0',
-                            status: 'pago',
-                            title: requestData.planDetails.title,
-                            date: 'undefined',
-                            amount: 'undefined',
-                        };
-                    }
+                });
 
-                    setCurrentInvoice(current);
+                if (!response.ok) { throw new Error("Erro na requisição"); }
+
+                const result = await response.json();
+                const filtered = filterInvoices(result.billings);
+                const overdueInvoicesCount = filtered.filter(invoice => invoice.situation_id === 2).length;
+                setOverdueCount(overdueInvoicesCount);
+
+                if (filtered.length > 0) {
+                    setCurrentInvoice(filtered[0]);
+                } else {
+                    setCurrentInvoice([]);
+                    setIsFirstMonth(true)
                 }
             } catch (error) {
-                console.error('Erro ao carregar dados do usuário:', error);
+                console.error('Erro ao carregar dados iniciais:', error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        loadUserData();
+        fetchInitialData();
     }, []);
 
+    const firstMonthInformative = () => {
+        setInformativeModalText(`Esse é o seu primeiro mês de contrato. Portanto, você ainda não tem histórico de pagamentos ou detalhes de faturas.`);
+        setIsInformativeModalVisible(true);
+    }
+
+
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.external.primary }}>
+        <SafeAreaView style={[{ flex: 1 }, isInformativeModalVisible ? { backgroundColor: '#0D3A75' } : { backgroundColor: AppColors.external.primary }]}>
             <TopBar />
             {/* Seção de Pagamento */}
             <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24, backgroundColor: '#F5F5F5' }}>
@@ -126,23 +94,23 @@ export default function Home() {
                         <Text style={styles.headerText}>{'Pagamento'}</Text>
                     </View>
 
-                    {isLoading ? (
-                        <BillSkeleton />
-                    ) : data && currentInvoice ? (
+                    {isLoading ? (<BillSkeleton />) : (
                         <View style={{ height: 100 }}>
                             <BillCard
                                 item={currentInvoice}
-                                status={currentInvoice.status}
+                                plan={userDatas?.plan?.name || ''}
+                                status={currentInvoice.situation_id || 3}
                                 showStatus={false}
                                 iconStatus
                                 chevron
                                 type={'default'}
-                                overdueCount={overdueInvoices.length}
-                                openCount={openInvoices.length}
+                                overdueCount={overdueCount}
+                                isFirstMonth={isFirstMonth}
+                                firstMonthInformative={firstMonthInformative}
                                 onPress={() => router.push({ pathname: '/paymentDetails', params: { id: currentInvoice.id } })}
                             />
                         </View>
-                    ) : null}
+                    )}
                 </View>
 
                 {/* Seção do Plano */}
@@ -150,21 +118,21 @@ export default function Home() {
                     <View style={styles.header}>
                         <Text style={styles.headerText}>{'Seu plano'}</Text>
                     </View>
-                    {isLoading ? (
-                        <PlanSkeleton />
-                    ) : data ? (
+
+
+                    {isLoading ? (<PlanSkeleton />) :
                         <View style={styles.card}>
                             <View style={styles.row}>
                                 <View style={[styles.iconCircle, { backgroundColor: AppColors.internal.button }]}>
                                     <Ionicons name="rocket-outline" size={24} color="white" />
                                 </View>
                                 <View style={styles.labelsWrapper}>
-                                    <Text style={styles.title}>{data.planDetails.title}</Text>
+                                    <Text style={styles.title}>Fibra - {userDatas?.plan?.name}</Text>
                                     <Text style={styles.subtitle}>
-                                        R$ {data.planDetails.price}/mês
+                                        R$ {parseFloat(userDatas?.plan?.value).toFixed(2)} / mês
                                     </Text>
-                                    <View style={[styles.statusButton, data.planDetails.status === 'Ativo' ? { backgroundColor: '#15803D' } : { backgroundColor: '#DC2626' }]}>
-                                        <Text style={styles.statusText}>{data.planDetails.status}</Text>
+                                    <View style={[styles.statusButton, userDatas?.msg_payment_mk === 'L' ? { backgroundColor: '#15803D' } : { backgroundColor: '#DC2626' }]}>
+                                        <Text style={styles.statusText}>{userDatas?.msg_payment_mk === 'L' ? 'Ativo' : 'Bloqueado'}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -172,9 +140,15 @@ export default function Home() {
                                 <Text style={styles.actionText}>{'Turbine seu plano'}</Text>
                             </TouchableOpacity>
                         </View>
-                    ) : null}
+                    }
                 </View>
             </View>
+
+            <InformativeModal
+                isModalVisible={isInformativeModalVisible}
+                setIsModalVisible={setIsInformativeModalVisible}
+                text={informativeModalText}
+            />
         </SafeAreaView>
     );
 };

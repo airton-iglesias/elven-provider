@@ -11,26 +11,37 @@ export default function BarCodeModal({ isModalVisible, setIsModalVisible, id }: 
 
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-
     useEffect(() => {
-        //requisição inicial aqui, usa o ID como parâmetro de identificação da fatura.
+        const fetchInitialData = async () => {
+            try {
+                setIsLoading(true);
 
-        const requestData: any = {
-            amount: '99999,99',
-            date: '05/12',
-            paymentType: 'Boleto',
-            code: `848700000009525301622024411051566126047166291230`
+                const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+                    }
+                });
+
+                if (!response.ok) { throw new Error("Erro na requisição"); }
+
+                const result = await response.json();
+                setBarCodeData(result.billing);
+
+            } catch (error) {
+                console.error('Erro ao carregar dados iniciais:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
-        setTimeout(() => {
-            setBarCodeData(requestData);
-            setIsLoading(false);
-        }, 2000);
+        fetchInitialData();
     }, []);
 
     const copyToClipboard = async () => {
-        await Clipboard.setStringAsync(barCodeData.code);
-        ToastAndroid.show("Código pix copiado!", ToastAndroid.SHORT);
+        await Clipboard.setStringAsync(barCodeData.digitable_line);
+        ToastAndroid.show("Código de barras copiado!", ToastAndroid.SHORT);
     };
 
     return (
@@ -60,22 +71,22 @@ export default function BarCodeModal({ isModalVisible, setIsModalVisible, id }: 
                                 <Text style={styles.modalLabels}>Valor a ser pago:</Text>
 
                                 {isLoading ? <Skeleton colorMode="light" width={100} radius={4} />
-                                    : <Text style={styles.modalLabelTitle}>R$ {barCodeData?.amount}</Text>
+                                    : <Text style={styles.modalLabelTitle}>R$ {parseFloat(barCodeData?.value).toFixed(2)}</Text>
                                 }
 
                                 {isLoading ? <Skeleton colorMode="light" width={80} height={15} radius={4} />
-                                    : <Text style={styles.modalLabels}>Venc. {barCodeData?.date} | {barCodeData?.paymentType}</Text>
+                                    : <Text style={styles.modalLabels}>Venc. {barCodeData?.due_day ? `${barCodeData?.due_day.substring(8, 10)}/${barCodeData?.due_day.substring(5, 7)}` : 'undefined'} | Boleto</Text>
                                 }
 
                             </View>
 
                             <View style={[styles.modalRow, { gap: 10 }]}>
-                                <Text style={[styles.modalLabels, {width: '100%'}]}>Utilize o código de barras abaixo para realizar o pagamento.</Text>
-                                <TouchableOpacity style={{width: '100%'}} onPress={copyToClipboard} activeOpacity={0.7} disabled={isLoading}>
+                                <Text style={[styles.modalLabels, { width: '100%' }]}>Utilize o código de barras abaixo para realizar o pagamento.</Text>
+                                <TouchableOpacity style={{ width: '100%' }} onPress={copyToClipboard} activeOpacity={0.7} disabled={isLoading}>
                                     {isLoading ? <Skeleton colorMode="light" width={'100%'} height={110} radius={10} />
                                         :
                                         <Text style={styles.pixCodeText} selectable>
-                                            {barCodeData?.code}
+                                            {barCodeData?.digitable_line}
                                         </Text>
                                     }
                                 </TouchableOpacity>

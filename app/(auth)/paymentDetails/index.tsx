@@ -15,50 +15,56 @@ import BarCodeModal from '@/components/barCodeModal';
 import InformativeModal from '@/components/informativeModal';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { AppColors } from '@/constants/colors';
 import BillSkeleton from '@/components/billSkeketon';
 import { Skeleton } from 'moti/skeleton';
-
-interface InitialData {
-    status: 'pago' | 'aberto' | 'atrasado';
-    title: string;
-    date: string;
-    amount: string;
-    mensalidade: string;
-    juros: string;
-    multa: string;
-    valorTotal: string;
-}
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PaymentDetails() {
     const { id } = useLocalSearchParams();
-    const [currentInvoice, setCurrentInvoice] = useState<InitialData | null>(null);
+    const [currentInvoice, setCurrentInvoice] = useState<any>(null);
+    const [userStoredDatas, setUserStoredDatas] = useState<any>(null);
+    const [userPlan, setUserPlan] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     // Variáveis de UI
     const [isPixCodeModalVisible, setIsPixCodeModalVisible] = useState<boolean>(false);
     const [isBarCodeModalVisible, setIsBarCodeModalVisible] = useState<boolean>(false);
     const [isInformativeModalVisible, setIsInformativeModalVisible] = useState<boolean>(false);
     const [informativeModalText, setInformativeModalText] = useState<string>('');
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-
-    // Conteúdo base64 de um PDF, só pro botão de compartilhar funcionar
-    const base64PdfContent = 'JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAyMDAgMjAwXSAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA0NCA+PgpzdHJlYW0KQlQKNzAgNTAgVGQKL0YxIDI0IFRmCihIZWxsbywgV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagoKeHJlZgowIDYKMDAwMDAwMDAwMDAgNjU1MzUgZgowMDAwMDAwMDEwIDEwIG4KMDAwMDAwMDA2NCAwMDAwIG4KMDAwMDAwMDEyMiAwMDAwIG4KMDAwMDAwMDIwNyAwMDAwIG4KMDAwMDAwMDI5OSAwMDAwIG4KdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgowCjUlRU9GCg==';
 
     useEffect(() => {
-        const requestData: InitialData = {
-            status: 'pago',
-            title: 'Fatura - Fibra 999 Mbps',
-            date: '10/2024',
-            amount: 'R$ 299,90',
-            mensalidade: 'R$ 200,00',
-            juros: 'R$ 5,00',
-            multa: 'R$ 10,00',
-            valorTotal: 'R$ 215,00',
+        const fetchInitialData = async () => {
+            try {
+                setIsLoading(true);
+
+                const getData = await AsyncStorage.getItem('customerData');
+                setUserStoredDatas(getData ? JSON.parse(getData) : null);
+
+                if (userStoredDatas) {
+                    setUserPlan(userStoredDatas.plan.name);
+                }
+
+                const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+                    }
+                });
+
+                if (!response.ok) { throw new Error("Erro na requisição"); }
+
+                const result = await response.json();
+                setCurrentInvoice(result.billing);
+
+            } catch (error) {
+                console.error('Erro ao carregar dados iniciais:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
-        setTimeout(() => {
-            setCurrentInvoice(requestData);
-            setIsLoading(false);
-        }, 3000);
+
+        fetchInitialData();
     }, []);
 
     // Função para baixar a fatura
@@ -74,10 +80,9 @@ export default function PaymentDetails() {
         }
 
         try {
-            // Criar um arquivo PDF fake no sistema de arquivos
             const fileUri: string = FileSystem.cacheDirectory + `${id}.pdf`;
 
-            await FileSystem.writeAsStringAsync(fileUri, base64PdfContent, { encoding: FileSystem.EncodingType.Base64 });
+            await FileSystem.writeAsStringAsync(fileUri, 'fakePdfContent', { encoding: FileSystem.EncodingType.Base64 });
 
             if (!(await Sharing.isAvailableAsync())) {
                 ToastAndroid.show('O compartilhamento não está disponível no seu dispositivo.', ToastAndroid.SHORT);
@@ -85,7 +90,6 @@ export default function PaymentDetails() {
             }
 
             await Sharing.shareAsync(fileUri);
-
             ToastAndroid.show('Fatura compartilhada com sucesso!', ToastAndroid.SHORT);
         } catch (error) {
             console.error('Erro ao compartilhar a fatura:', error);
@@ -93,14 +97,42 @@ export default function PaymentDetails() {
         }
     };
 
+    const calculateAmountWithInterestAndPenalty = (amount: any, dueDate: any, paymentDate = new Date()) => {
+        const penaltyRate = 0.02;
+        const monthlyInterestRate = 0.0025;
+
+        const timeDifferenceInDays = Math.max(0, (paymentDate.getTime() - dueDate.getTime()) / (1000 * 3600 * 24));
+
+        if (timeDifferenceInDays === 0) return amount;
+
+        const monthsLate = timeDifferenceInDays / 30;
+        const amountWithInterest = amount * Math.pow(1 + monthlyInterestRate, monthsLate);
+        const penalty = amount * penaltyRate;
+        const finalAmount = amountWithInterest + penalty;
+
+        return Math.floor(finalAmount * 100) / 100;
+    };
+
+    const calculateInvoiceDetails = () => {
+        if (!currentInvoice) return { totalAmount: 0, interest: 0, penalty: 0 };
+
+        const dueDate = new Date(currentInvoice.due_day);
+        const paymentDate = currentInvoice.date_payment ? new Date(currentInvoice.date_payment) : undefined;
+
+        const totalWithInterestAndPenalty = calculateAmountWithInterestAndPenalty(currentInvoice.value, dueDate, paymentDate);
+        const interest = totalWithInterestAndPenalty - currentInvoice.value - (currentInvoice.value * 0.02);
+        const penalty = currentInvoice.value * 0.02;
+
+        return { totalAmount: totalWithInterestAndPenalty, interest, penalty };
+    };
+
+    const { totalAmount, interest, penalty } = calculateInvoiceDetails();
+
     return (
         <SafeAreaView
-            style={[
-                { flex: 1 },
-                isInformativeModalVisible || isPixCodeModalVisible || isBarCodeModalVisible
-                    ? { backgroundColor: '#7A7A7A' }
-                    : { backgroundColor: '#F5F5F5' },
-            ]}
+            style={[{ flex: 1 }, isInformativeModalVisible || isPixCodeModalVisible || isBarCodeModalVisible
+                ? { backgroundColor: '#7A7A7A' }
+                : { backgroundColor: '#F5F5F5' }]}
         >
             <View style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
                 <View style={styles.headerContainer}>
@@ -116,37 +148,35 @@ export default function PaymentDetails() {
                             <BillSkeleton />
                             :
                             <BillCard
-                                item={{
-                                    title: currentInvoice?.title || 'undefined',
-                                    date: currentInvoice?.date || 'undefined',
-                                    amount: currentInvoice?.amount || 'undefined',
-                                }}
-                                status={currentInvoice?.status || 'pago'}
+                                item={currentInvoice}
+                                plan={userPlan || ''}
+                                status={currentInvoice?.situation_id || 3}
                                 showStatus={false}
                                 iconStatus
-                                type={'details'}
+                                type={'history'}
                                 chevron={false}
                             />
                         }
-
                     </View>
 
                     {/* Botões de ação */}
-                    <View style={[styles.buttonsContainer, currentInvoice?.status !== 'pago' ? { justifyContent: 'space-between' } : { gap: 25 }]}>
-                        {currentInvoice?.status !== 'pago' && (
-                            <ActionButton text="Pagar com pix" icon={<PixIcon />} onPress={() => setIsPixCodeModalVisible(true)} disabled={isLoading} />
-                        )}
-                        {currentInvoice?.status !== 'pago' && (
-                            <ActionButton
-                                text="Código de barras"
-                                icon={<BarCodeIcon />}
-                                onPress={() => setIsBarCodeModalVisible(true)}
-                                disabled={isLoading}
-                            />
-                        )}
-                        <ActionButton text="2ª via da última fatura" icon={<PdfIcon />} onPress={downloadInvoice} disabled={isLoading} />
-                        <ActionButton text="Compartilhar fatura" icon={<ShareIcon />} onPress={shareInvoice} disabled={isLoading} />
-                    </View>
+                    {isLoading ? (
+                        <View style={styles.buttonsContainer}>
+                            <Skeleton width={60} height={60} radius={10} colorMode='light' />
+                            <Skeleton width={60} height={60} radius={10} colorMode='light' />
+                            <Skeleton width={60} height={60} radius={10} colorMode='light' />
+                            <Skeleton width={60} height={60} radius={10} colorMode='light' />
+                        </View>
+                    ) : (
+                        currentInvoice?.situation_id !== 3 && (
+                            <View style={styles.buttonsContainer}>
+                                <ActionButton text="Pagar com pix" icon={<PixIcon />} onPress={() => setIsPixCodeModalVisible(true)} disabled={isLoading} />
+                                <ActionButton text="Código de barras" icon={<BarCodeIcon />} onPress={() => setIsBarCodeModalVisible(true)} disabled={isLoading} />
+                                <ActionButton text="2ª via da última fatura" icon={<PdfIcon />} onPress={downloadInvoice} disabled={isLoading} />
+                                <ActionButton text="Compartilhar fatura" icon={<ShareIcon />} onPress={shareInvoice} disabled={isLoading} />
+                            </View>
+                        )
+                    )}
 
                     {/* Detalhes da fatura */}
                     <Text style={styles.sectionTitle}>Detalhes da fatura</Text>
@@ -156,7 +186,15 @@ export default function PaymentDetails() {
                             <Text style={styles.detailsText}>Valor da mensalidade</Text>
                             {isLoading ?
                                 <Skeleton width={80} height={24} colorMode='light' />
-                                : <Text style={styles.detailsText}>{currentInvoice?.mensalidade}</Text>
+                                : <Text style={styles.detailsText}>  R$ {parseFloat(userStoredDatas?.plan.value).toFixed(2)}</Text>
+                            }
+                        </View>
+
+                        <View style={styles.detailsRow}>
+                            <Text style={styles.detailsText}>Multa</Text>
+                            {isLoading ?
+                                <Skeleton width={80} height={24} colorMode='light' />
+                                : <Text style={styles.detailsText}>R$ {penalty.toFixed(2)}</Text>
                             }
                         </View>
 
@@ -164,17 +202,15 @@ export default function PaymentDetails() {
                             <Text style={styles.detailsText}>Juros</Text>
                             {isLoading ?
                                 <Skeleton width={80} height={24} colorMode='light' />
-                                : <Text style={styles.detailsText}>{currentInvoice?.juros}</Text>
+                                : <Text style={styles.detailsText}>R$ {interest.toFixed(2)}</Text>
                             }
-
                         </View>
 
                         <View style={styles.detailsRow}>
-                            <Text style={styles.detailsText}>Multa</Text>
-
+                            <Text style={styles.detailsText}>Descontos</Text>
                             {isLoading ?
                                 <Skeleton width={80} height={24} colorMode='light' />
-                                : <Text style={styles.detailsText}>{currentInvoice?.multa}</Text>
+                                : <Text style={styles.detailsText}>R$ -{userStoredDatas?.monthly_discount ? userStoredDatas?.monthly_discount.toFixed(2) : '0.00'}</Text>
                             }
                         </View>
 
@@ -183,24 +219,31 @@ export default function PaymentDetails() {
                             {isLoading ?
                                 <Skeleton width={80} height={24} colorMode='light' />
                                 :
-                                <Text style={styles.detailsText}>{currentInvoice?.valorTotal}</Text>
+                                <Text style={styles.detailsText}>R$ {totalAmount.toFixed(2)}</Text>
                             }
                         </View>
                     </View>
                 </View>
-
             </View>
-            <PixCodeModal
-                isModalVisible={isPixCodeModalVisible}
-                setIsModalVisible={setIsPixCodeModalVisible}
-                id={id || ''}
-            />
+            {/* Modais */}
 
-            <BarCodeModal
-                isModalVisible={isBarCodeModalVisible}
-                setIsModalVisible={setIsBarCodeModalVisible}
-                id={id || ''}
-            />
+            {!isLoading && (
+                <PixCodeModal
+                    value={totalAmount.toFixed(2)}
+                    isModalVisible={isPixCodeModalVisible}
+                    setIsModalVisible={setIsPixCodeModalVisible}
+                    id={id}
+                />
+            )}
+
+            {!isLoading && (
+                <BarCodeModal
+                    value={totalAmount.toFixed(2)}
+                    isModalVisible={isBarCodeModalVisible}
+                    setIsModalVisible={setIsBarCodeModalVisible}
+                    id={id}
+                />
+            )}
 
             <InformativeModal
                 isModalVisible={isInformativeModalVisible}
@@ -215,26 +258,27 @@ const styles = StyleSheet.create({
     headerContainer: {
         marginTop: 25,
         marginBottom: 20,
-        flexDirection: 'row' as const,
+        flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
     },
     headerText: {
         fontSize: fontSize.titles.medium,
-        fontWeight: 'bold' as const,
+        fontWeight: 'bold',
     },
     buttonsContainer: {
-        flexDirection: 'row' as const,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
     },
     sectionTitle: {
         fontSize: fontSize.titles.medium,
-        fontWeight: 'bold' as const,
+        fontWeight: 'bold',
         color: '#333333',
     },
     detailsContainer: {},
     detailsRow: {
-        flexDirection: 'row' as const,
+        flexDirection: 'row',
         justifyContent: 'space-between',
         borderBottomWidth: 1,
         paddingVertical: 15,

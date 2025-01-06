@@ -50,7 +50,7 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
                                     name="name"
                                     render={({ field: { onChange, onBlur, value } }) => (
                                         <Input
-                                            label={"Digite a nova senha do Wi-fi"}
+                                            label={"Digite o novo nome do Wi-fi"}
                                             onChange={(text) => onChange(text)}
                                             onBlur={onBlur}
                                             value={value}
@@ -70,7 +70,7 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
                                     render={({ field: { onChange, onBlur, value } }) => (
                                         <Input
                                             onChange={(text) => onChange(text)}
-                                            label={"Repita a nova senha do Wi-fi"}
+                                            label={"Repita o novo nome do Wi-fi"}
                                             onBlur={onBlur}
                                             value={value}
                                             error={errors.confirmName?.message}

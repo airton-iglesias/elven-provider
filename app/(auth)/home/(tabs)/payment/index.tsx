@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, FlatList, ToastAndroid } from 'react-native';
-import { Entypo } from '@expo/vector-icons';
+import { StyleSheet, Text, TouchableOpacity, View, FlatList, ToastAndroid, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fontSize } from '@/constants/fonts';
 import { AppColors } from '@/constants/colors';
@@ -20,27 +19,14 @@ import PixCodeModal from '@/components/pixCodeModal';
 import BarCodeModal from '@/components/barCodeModal';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface PaymentHistoryItem {
-    id: string;
-    status: 'pago' | 'aberto' | 'atrasado';
-    title: string;
-    date: string;
-    amount: string;
-}
-
-interface PaymentData {
-    paymentDay: string;
-    title: string;
-    historyList: PaymentHistoryItem[];
-}
 
 export default function Payment() {
+    const [userPlan, setUserPlan] = useState<any>(null);
     const [paymentDay, setPaymentDay] = useState<string>('');
-    const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([]);
-    const [currentInvoice, setCurrentInvoice] = useState<PaymentHistoryItem | null>(null);
-    const [overdueInvoices, setOverdueInvoices] = useState<PaymentHistoryItem[]>([]);
-    const [openInvoices, setOpenInvoices] = useState<PaymentHistoryItem[]>([]);
+    const [billings, setBillings] = useState<any>([]);
+    const [currentInvoice, setCurrentInvoice] = useState<any>(null);
 
     // Variáveis de UI
     const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -52,76 +38,64 @@ export default function Payment() {
     const [informativeModalText, setInformativeModalText] = useState<string>('');
     const [isFirstMonth, setIsFirstMonth] = useState<boolean>(false);
 
-    // Conteúdo base64 de um PDF, só pro botão de compartilhar funcionar
-    const base64PdfContent = 'JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAyMDAgMjAwXSAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA0NCA+PgpzdHJlYW0KQlQKNzAgNTAgVGQKL0YxIDI0IFRmCihIZWxsbywgV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagoKeHJlZgowIDYKMDAwMDAwMDAwMDAgNjU1MzUgZgowMDAwMDAwMDEwIDEwIG4KMDAwMDAwMDA2NCAwMDAwIG4KMDAwMDAwMDEyMiAwMDAwIG4KMDAwMDAwMDIwNyAwMDAwIG4KMDAwMDAwMDI5OSAwMDAwIG4KdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgowCjUlRU9GCg==';
+    const filterInvoices = (billings: any[]) => {
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1;
+
+        const filteredBillings = billings.filter((item) => {
+            const [year, month] = item.due_day.split('-').map(Number);
+            return (year < currentYear) || (year === currentYear && month <= currentMonth);
+        });
+
+        return filteredBillings;
+    };
 
     useEffect(() => {
-        // Simulação de requisição de dados
-        const data: PaymentData = {
-            paymentDay: '05',
-            title: "Fatura - Fibra 999 Mbps",
-            historyList: [
-                {
-                    id: '1',
-                    status: 'aberto',
-                    title: 'Fatura - Fibra 999 Mbps',
-                    date: '10/2024',
-                    amount: 'R$ 299,90',
-                },
-                {
-                    id: '2',
-                    status: 'atrasado',
-                    title: 'Fatura - Fibra 999 Mbps',
-                    date: '09/2024',
-                    amount: 'R$ 399,90',
-                },
-                {
-                    id: '3',
-                    status: 'pago',
-                    title: 'Fatura - Fibra 999 Mbps',
-                    date: '08/2024',
-                    amount: 'R$ 499,90',
-                },
-            ],
+        const fetchInitialData = async () => {
+            try {
+                setIsLoading(true);
+
+                const getData = await AsyncStorage.getItem('customerData');
+                const userStoredDatas = getData ? JSON.parse(getData) : null;
+
+                if (userStoredDatas && userStoredDatas.due_day) {
+                    setPaymentDay(userStoredDatas.due_day);
+                    setUserPlan(userStoredDatas.plan.name);
+                }
+
+                const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings?customer_id=${userStoredDatas.id}&sort_field=due_day&sort_direction=desc`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+                    }
+                });
+
+                if (!response.ok) { throw new Error("Erro na requisição"); }
+
+                const result = await response.json();
+                const filtered = filterInvoices(result.billings);
+
+                if (filtered.length > 0) {
+                    setCurrentInvoice(filtered[0]);
+                    setBillings(filtered.slice(1));
+                } else {
+                    setCurrentInvoice([]);
+                    setBillings([]);
+                    setIsFirstMonth(true)
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados iniciais:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
-        // Simulação de atraso na requisição
-        setTimeout(() => {
-            setPaymentDay(data.paymentDay);
-            setPaymentHistory(data.historyList);
-
-            // Separar faturas abertas e em atraso
-            const openInvoicesList = data.historyList.filter((item) => item.status === 'aberto');
-            const overdueInvoicesList = data.historyList.filter((item) => item.status === 'atrasado');
-
-            setOpenInvoices(openInvoicesList);
-            setOverdueInvoices(overdueInvoicesList);
-
-            let current: PaymentHistoryItem | null = null;
-
-            if (openInvoicesList.length > 0) {
-                current = openInvoicesList[0];
-            } else if (overdueInvoicesList.length > 0) {
-                current = overdueInvoicesList[0];
-            } else if (data.historyList.length > 0) {
-                current = data.historyList[0];
-            } else {
-                current = {
-                    id: '0',
-                    status: 'pago',
-                    title: data.title,
-                    date: 'undefined',
-                    amount: 'undefined',
-                };
-                setIsFirstMonth(true);
-            }
-            setCurrentInvoice(current);
-            setIsLoading(false);
-        }, 2000);
+        fetchInitialData();
     }, []);
 
-    // Filtrar histórico sem a fatura atual
-    const historyList = paymentHistory.filter((item) => item.id !== currentInvoice?.id);
+    const billingsList = billings.filter((item: any) => item.id !== currentInvoice?.id);
 
     const changePaymentDay = async (day: string) => {
         setIsChangingPaymentDay(true);
@@ -138,28 +112,43 @@ export default function Payment() {
 
     // Função para baixar a fatura
     const downloadInvoice = async (): Promise<void> => {
-        setInformativeModalText(`A 2º via da última fatura está sendo baixada, verifique os seus arquivos.`);
-        setIsInformativeModalVisible(true);
-    };
-
-    // Função para compartilhar a fatura
-    const shareInvoice = async (): Promise<void> => {
-        if (!currentInvoice) {
+        if (!currentInvoice?.integration_link) {
+            ToastAndroid.show('O link para download não está disponível.', ToastAndroid.SHORT);
             return;
         }
 
         try {
-            // Criar um arquivo PDF fake no sistema de arquivos
+            Linking.openURL(currentInvoice.integration_link);
+            setInformativeModalText(`A 2ª via da última fatura está sendo baixada. Verifique seus arquivos.`);
+            setIsInformativeModalVisible(true);
+        } catch (error) {
+            console.error('Erro ao abrir o link da fatura:', error);
+            ToastAndroid.show('Não foi possível baixar a fatura.', ToastAndroid.SHORT);
+        }
+    };
+
+    // Função para compartilhar a fatura
+    const shareInvoice = async (): Promise<void> => {
+        if (!currentInvoice?.integration_link) {
+            ToastAndroid.show('O link da fatura não está disponível.', ToastAndroid.SHORT);
+            return;
+        }
+
+        try {
             const fileUri: string = FileSystem.cacheDirectory + `${currentInvoice.id}.pdf`;
 
-            await FileSystem.writeAsStringAsync(fileUri, base64PdfContent, { encoding: FileSystem.EncodingType.Base64 });
+            // Baixar o arquivo remoto e salvar localmente
+            const downloadResult = await FileSystem.downloadAsync(
+                currentInvoice.integration_link,
+                fileUri
+            );
 
             if (!(await Sharing.isAvailableAsync())) {
                 ToastAndroid.show('O compartilhamento não está disponível no seu dispositivo.', ToastAndroid.SHORT);
                 return;
             }
 
-            await Sharing.shareAsync(fileUri);
+            await Sharing.shareAsync(downloadResult.uri);
 
             ToastAndroid.show('Fatura compartilhada com sucesso!', ToastAndroid.SHORT);
         } catch (error) {
@@ -167,6 +156,7 @@ export default function Payment() {
             ToastAndroid.show('Não foi possível compartilhar a fatura.', ToastAndroid.SHORT);
         }
     };
+
 
     const firstMonthInformative = () => {
         setInformativeModalText(`Esse é o seu primeiro mês de contrato. Portanto, você ainda não tem histórico de pagamentos ou detalhes de faturas.`);
@@ -192,44 +182,35 @@ export default function Payment() {
                         <View style={{ height: 100 }}>
                             <BillCard
                                 item={currentInvoice}
-                                status={currentInvoice.status}
+                                plan={userPlan || ''}
+                                status={currentInvoice.situation_id || 3}
                                 showStatus={false}
                                 iconStatus
                                 chevron
-                                type={overdueInvoices.length > 1 ? 'default' : 'details'}
-                                overdueCount={overdueInvoices.length}
-                                openCount={openInvoices.length}
+                                type={'details'}
                                 isFirstMonth={isFirstMonth}
                                 firstMonthInformative={firstMonthInformative}
                                 onPress={() => router.push({ pathname: '/paymentDetails', params: { id: currentInvoice.id } })}
                             />
                         </View>
+                    ) : (<BillSkeleton />)}
+
+                    {isLoading ? (
+                        <View style={styles.buttonsContainer}>
+                            <Skeleton width={60} height={60} radius={10} colorMode='light' />
+                            <Skeleton width={60} height={60} radius={10} colorMode='light' />
+                            <Skeleton width={60} height={60} radius={10} colorMode='light' />
+                            <Skeleton width={60} height={60} radius={10} colorMode='light' />
+                        </View>
                     ) : (
-                        <BillSkeleton />
+                        currentInvoice?.situation_id !== 3 && !isFirstMonth && (
+                            <View style={styles.buttonsContainer}>
+                                <ActionButton text="Pagar com pix" icon={<PixIcon />} onPress={() => { isFirstMonth ? firstMonthInformative() : setIsPixCodeModalVisible(true); }} disabled={isLoading} />
+                                <ActionButton text="Código de barras" icon={<BarCodeIcon />} onPress={() => { isFirstMonth ? firstMonthInformative() : setIsBarCodeModalVisible(true) }} disabled={isLoading} />
+                                <ActionButton text="2ª via da última fatura" icon={<PdfIcon />} onPress={() => isFirstMonth ? firstMonthInformative() : downloadInvoice()} disabled={isLoading} />
+                                <ActionButton text="Compartilhar fatura" icon={<ShareIcon />} onPress={() => { isFirstMonth ? firstMonthInformative() : shareInvoice() }} disabled={isLoading} />
+                            </View>)
                     )}
-
-                    {/* Botões de ação - pix, código de barras, etc */}
-
-                    <View
-                        style={[
-                            styles.buttonsContainer,
-                            currentInvoice?.status !== 'pago' ? { justifyContent: 'space-between' } : { gap: 25 },
-                        ]}
-                    >
-                        {currentInvoice?.status !== 'pago' && (
-                            <ActionButton text="Pagar com pix" icon={<PixIcon />} onPress={() => { isFirstMonth ? firstMonthInformative() : setIsPixCodeModalVisible(true); }} disabled={isLoading} />
-                        )}
-                        {currentInvoice?.status !== 'pago' && (
-                            <ActionButton
-                                text="Código de barras"
-                                icon={<BarCodeIcon />}
-                                onPress={() => { isFirstMonth ? firstMonthInformative() : setIsBarCodeModalVisible(true) }}
-                                disabled={isLoading}
-                            />
-                        )}
-                        <ActionButton text="2ª via da última fatura" icon={<PdfIcon />} onPress={() => isFirstMonth ? firstMonthInformative() : downloadInvoice()} disabled={isLoading} />
-                        <ActionButton text="Compartilhar fatura" icon={<ShareIcon />} onPress={() => { isFirstMonth ? firstMonthInformative() : shareInvoice() }} disabled={isLoading} />
-                    </View>
 
                     {/* Dia do vencimento */}
                     <View style={styles.expirationContainer}>
@@ -237,7 +218,7 @@ export default function Payment() {
                             style={styles.expirationButton}
                             activeOpacity={0.7}
                             onPress={() => setIsModalVisible(true)}
-                            disabled={isLoading}
+                            disabled={true}
                         >
                             <View style={{ gap: 5 }}>
                                 <Text style={styles.expirationTitle}>Dia do vencimento:</Text>
@@ -247,8 +228,6 @@ export default function Payment() {
                                     <Text style={styles.expirationSubtitle}>Todo dia {paymentDay}</Text>
                                 )}
                             </View>
-
-                            <Entypo name="chevron-thin-right" size={24} color="#D96A0B" />
                         </TouchableOpacity>
                     </View>
 
@@ -263,15 +242,16 @@ export default function Payment() {
                     ) : (
                         <FlatList
                             keyExtractor={(item) => item.id}
-                            data={historyList}
+                            data={billingsList}
                             showsVerticalScrollIndicator={false}
                             contentContainerStyle={{ paddingBottom: 20, gap: 15 }}
                             renderItem={({ item }) => {
                                 return (
                                     <BillCard
                                         item={item}
+                                        plan={userPlan || ''}
                                         onPress={() => { router.push({ pathname: '/paymentDetails', params: { id: item.id } }) }}
-                                        status={item.status}
+                                        status={item.situation_id}
                                         iconStatus={false}
                                         showStatus
                                         chevron
@@ -294,17 +274,21 @@ export default function Payment() {
                 isChangingPaymentDay={isChangingPaymentDay}
             />
 
-            <PixCodeModal
-                isModalVisible={isPixCodeModalVisible}
-                setIsModalVisible={setIsPixCodeModalVisible}
-                id={currentInvoice?.id || ''}
-            />
+            {!isLoading && !isFirstMonth && (
+                <PixCodeModal
+                    isModalVisible={isPixCodeModalVisible}
+                    setIsModalVisible={setIsPixCodeModalVisible}
+                    id={currentInvoice?.id}
+                />
+            )}
 
-            <BarCodeModal
-                isModalVisible={isBarCodeModalVisible}
-                setIsModalVisible={setIsBarCodeModalVisible}
-                id={currentInvoice?.id || ''}
-            />
+            {!isLoading && !isFirstMonth && (
+                <BarCodeModal
+                    isModalVisible={isBarCodeModalVisible}
+                    setIsModalVisible={setIsBarCodeModalVisible}
+                    id={currentInvoice?.id}
+                />
+            )}
 
             <InformativeModal
                 isModalVisible={isInformativeModalVisible}
@@ -361,6 +345,7 @@ const styles = StyleSheet.create({
     },
     buttonsContainer: {
         flexDirection: 'row',
+        justifyContent: 'space-between'
     },
     sectionTitle: {
         fontSize: fontSize.titles.medium,
