@@ -6,30 +6,40 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "moti/skeleton";
 
 
-export default function PixCodeModal({ isModalVisible, setIsModalVisible, id }: any) {
+export default function PixCodeModal({ isModalVisible, setIsModalVisible, id, value }: any) {
     const [pixData, setPixData] = useState<any>(null);
 
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
 
     useEffect(() => {
-        //requisição inicial aqui, usa o ID como parâmetro de identificação da fatura.
+        const fetchInitialData = async () => {
+            try {
+                const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+                    }
+                });
 
-        const requestData: any = {
-            amount: '99999,99',
-            date: '05/12',
-            paymentType: 'Pix',
-            code: `00020101021226940014BR.COV.BCB PIX257Zqrcodespix.example.com.br/cpra/v2/cobv/c247cffe57384dd682b542682235dcf252 04000053039865802BR5905EFISA600 8SAOPAULO62070503-*'63047CA9`
+                if (!response.ok) { throw new Error("Erro na requisição"); }
+
+                const result = await response.json();
+                setPixData(result.billing);
+
+            } catch (error) {
+                console.error('Erro ao carregar dados iniciais:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
-        setTimeout(() => {
-            setPixData(requestData);
-            setIsLoading(false);
-        }, 2000);
+        fetchInitialData();
     }, []);
 
     const copyToClipboard = async () => {
-        await Clipboard.setStringAsync(pixData.code);
+        await Clipboard.setStringAsync(pixData?.pix_copy_paste);
         ToastAndroid.show("Código pix copiado!", ToastAndroid.SHORT);
     };
 
@@ -60,22 +70,22 @@ export default function PixCodeModal({ isModalVisible, setIsModalVisible, id }: 
                                 <Text style={styles.modalLabels}>Valor a ser pago:</Text>
 
                                 {isLoading ? <Skeleton colorMode="light" width={100} radius={4} />
-                                    : <Text style={styles.modalLabelTitle}>R$ {pixData?.amount}</Text>
+                                    : <Text style={styles.modalLabelTitle}>R$ {value ? value : parseFloat(pixData?.value).toFixed(2)}</Text>
                                 }
 
                                 {isLoading ? <Skeleton colorMode="light" width={80} height={15} radius={4} />
-                                    : <Text style={styles.modalLabels}>Venc. {pixData?.date} | {pixData?.paymentType}</Text>
+                                    : <Text style={styles.modalLabels}>Venc. {pixData?.due_day ? `${pixData?.due_day.substring(8, 10)}/${pixData?.due_day.substring(5, 7)}` : 'undefined'} | Pix</Text>
                                 }
 
                             </View>
 
                             <View style={[styles.modalRow, { gap: 10 }]}>
                                 <Text style={styles.modalLabels}>Utilize o código Pix Copia e Cola abaixo para realizar o pagamento.</Text>
-                                <TouchableOpacity style={{width: '100%'}} onPress={copyToClipboard} activeOpacity={0.7} disabled={isLoading}>
+                                <TouchableOpacity style={{ width: '100%' }} onPress={copyToClipboard} activeOpacity={0.7} disabled={isLoading}>
                                     {isLoading ? <Skeleton colorMode="light" width={'100%'} height={110} radius={10} />
                                         :
                                         <Text style={styles.pixCodeText} selectable>
-                                            {pixData?.code}
+                                            {pixData?.pix_copy_paste}
                                         </Text>
                                     }
                                 </TouchableOpacity>

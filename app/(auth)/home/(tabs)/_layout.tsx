@@ -15,7 +15,7 @@ interface TabIconWithDotProps {
 
 const TabIconWithDot: React.FC<TabIconWithDotProps> = ({ IconComponent, focused }) => (
     <View style={styles.iconContainer}>
-        <IconComponent strokeColor={focused ? '#D96A0B': 'gray'}/>
+        <IconComponent strokeColor={focused ? '#D96A0B' : 'gray'} />
         {focused && <View style={styles.dot} />}
     </View>
 );
@@ -31,16 +31,16 @@ export default function TabLayout() {
                 }}
             >
                 <Tabs.Screen
-                    name="index"
-                    options={{
-                        tabBarShowLabel: false,
-                        tabBarIcon: ({ focused }) => (
-                            <TabIconWithDot IconComponent={HomeIcon} focused={focused} />
-                        ),
-                    }}
+                name="index/index"
+                options={{
+                    tabBarShowLabel: false,
+                    tabBarIcon: ({ focused }) => (
+                        <TabIconWithDot IconComponent={HomeIcon} focused={focused} />
+                    ),
+                }}
                 />
                 <Tabs.Screen
-                    name="payment"
+                    name="payment/index"
                     options={{
                         tabBarShowLabel: false,
                         tabBarIcon: ({ focused }) => (
@@ -49,7 +49,7 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="wifi"
+                    name="wifi/index"
                     options={{
                         tabBarShowLabel: false,
                         tabBarIcon: ({ focused }) => (
@@ -58,7 +58,7 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="settings"
+                    name="settings/index"
                     options={{
                         tabBarShowLabel: false,
                         tabBarIcon: ({ focused }) => (
