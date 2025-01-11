@@ -22,8 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function PaymentDetails() {
     const { id } = useLocalSearchParams();
     const [currentInvoice, setCurrentInvoice] = useState<any>(null);
-    const [userStoredDatas, setUserStoredDatas] = useState<any>(null);
-    const [userPlan, setUserPlan] = useState<any>(null);
+    const [userDatas, setUserDatas] = useState<any>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     // Variáveis de UI
@@ -38,11 +37,8 @@ export default function PaymentDetails() {
                 setIsLoading(true);
 
                 const getData = await AsyncStorage.getItem('customerData');
-                setUserStoredDatas(getData ? JSON.parse(getData) : null);
-
-                if (userStoredDatas) {
-                    setUserPlan(userStoredDatas.plan.name);
-                }
+                const userStoredDatas = getData ? JSON.parse(getData) : null;
+                setUserDatas(userStoredDatas);
 
                 const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings/${id}`, {
                     method: 'GET',
@@ -97,36 +93,48 @@ export default function PaymentDetails() {
         }
     };
 
-    const calculateAmountWithInterestAndPenalty = (amount: any, dueDate: any, paymentDate = new Date()) => {
-        const penaltyRate = 0.02;
-        const monthlyInterestRate = 0.0025;
+    const penaltyRate = 0.02;
+    const monthlyInterestRate = 0.0025;
 
-        const timeDifferenceInDays = Math.max(0, (paymentDate.getTime() - dueDate.getTime()) / (1000 * 3600 * 24));
-
-        if (timeDifferenceInDays === 0) return amount;
-
-        const monthsLate = timeDifferenceInDays / 30;
-        const amountWithInterest = amount * Math.pow(1 + monthlyInterestRate, monthsLate);
-        const penalty = amount * penaltyRate;
-        const finalAmount = amountWithInterest + penalty;
-
-        return Math.floor(finalAmount * 100) / 100;
+    const calculateInterest = (dueDate: any = new Date(), paymentDate: any = new Date(), value: number): number => {
+        if (paymentDate <= dueDate) { return 0; }
+        const daysLate = ((paymentDate - dueDate) / 86400000) / 30;
+        const interest = (Math.trunc((value * monthlyInterestRate * daysLate) * 100) / 100);
+        return interest;
     };
 
-    const calculateInvoiceDetails = () => {
-        if (!currentInvoice) return { totalAmount: 0, interest: 0, penalty: 0 };
+    const calculateInvoiceDetails = (currentInvoice: any | null) => {
+        if (!currentInvoice) { return { totalAmount: 0, interest: 0, penalty: 0 }; }
 
-        const dueDate = new Date(currentInvoice.due_day);
-        const paymentDate = currentInvoice.date_payment ? new Date(currentInvoice.date_payment) : undefined;
+        const { value, due_day, date_payment } = currentInvoice;
 
-        const totalWithInterestAndPenalty = calculateAmountWithInterestAndPenalty(currentInvoice.value, dueDate, paymentDate);
-        const interest = totalWithInterestAndPenalty - currentInvoice.value - (currentInvoice.value * 0.02);
-        const penalty = currentInvoice.value * 0.02;
+        if (!due_day || isNaN(new Date(due_day).getTime())) { return { totalAmount: 0, interest: 0, penalty: 0 }; }
 
-        return { totalAmount: totalWithInterestAndPenalty, interest, penalty };
+        const dueDate = new Date(due_day);
+        const paymentDate = date_payment ? new Date(date_payment) : new Date();
+
+        if (isNaN(dueDate.getTime())) { return { totalAmount: 0, interest: 0, penalty: 0 }; }
+
+        let penalty = 0.00;
+        let interest = 0.00;
+
+        if (paymentDate > dueDate) {
+            penalty = value * penaltyRate;
+            interest = calculateInterest(dueDate, paymentDate, value);
+        }
+
+        const totalWithInterestAndPenalty = value + interest + penalty;
+
+        return {
+            totalAmount: Math.trunc(totalWithInterestAndPenalty * 100) / 100,
+            interest: interest,
+            penalty: Math.trunc(penalty * 100) / 100,
+        };
     };
 
-    const { totalAmount, interest, penalty } = calculateInvoiceDetails();
+    const { totalAmount, interest, penalty } = calculateInvoiceDetails(currentInvoice);
+
+
 
     return (
         <SafeAreaView
@@ -149,7 +157,7 @@ export default function PaymentDetails() {
                             :
                             <BillCard
                                 item={currentInvoice}
-                                plan={userPlan || ''}
+                                plan={userDatas?.plan?.name || ''}
                                 status={currentInvoice?.situation_id || 3}
                                 showStatus={false}
                                 iconStatus
@@ -186,7 +194,7 @@ export default function PaymentDetails() {
                             <Text style={styles.detailsText}>Valor da mensalidade</Text>
                             {isLoading ?
                                 <Skeleton width={80} height={24} colorMode='light' />
-                                : <Text style={styles.detailsText}>  R$ {parseFloat(userStoredDatas?.plan.value).toFixed(2)}</Text>
+                                : <Text style={styles.detailsText}>  R$ {parseFloat(userDatas?.plan.value).toFixed(2)}</Text>
                             }
                         </View>
 
@@ -205,14 +213,15 @@ export default function PaymentDetails() {
                                 : <Text style={styles.detailsText}>R$ {interest.toFixed(2)}</Text>
                             }
                         </View>
-
-                        <View style={styles.detailsRow}>
-                            <Text style={styles.detailsText}>Descontos</Text>
-                            {isLoading ?
-                                <Skeleton width={80} height={24} colorMode='light' />
-                                : <Text style={styles.detailsText}>R$ -{userStoredDatas?.monthly_discount ? userStoredDatas?.monthly_discount.toFixed(2) : '0.00'}</Text>
-                            }
-                        </View>
+                        {userDatas?.monthly_discount && (
+                            <View style={styles.detailsRow}>
+                                <Text style={styles.detailsText}>Descontos</Text>
+                                {isLoading ?
+                                    <Skeleton width={80} height={24} colorMode='light' />
+                                    : <Text style={styles.detailsText}>R$ -{userDatas?.monthly_discount.toFixed(2)}</Text>
+                                }
+                            </View>
+                        )}
 
                         <View style={[styles.detailsRow, { borderBottomWidth: 0 }]}>
                             <Text style={styles.detailsText}>Valor total</Text>
@@ -229,7 +238,7 @@ export default function PaymentDetails() {
 
             {!isLoading && (
                 <PixCodeModal
-                    value={totalAmount.toFixed(2)}
+                    value={totalAmount}
                     isModalVisible={isPixCodeModalVisible}
                     setIsModalVisible={setIsPixCodeModalVisible}
                     id={id}
@@ -238,7 +247,7 @@ export default function PaymentDetails() {
 
             {!isLoading && (
                 <BarCodeModal
-                    value={totalAmount.toFixed(2)}
+                    value={totalAmount}
                     isModalVisible={isBarCodeModalVisible}
                     setIsModalVisible={setIsBarCodeModalVisible}
                     id={id}

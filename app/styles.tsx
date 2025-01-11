@@ -19,6 +19,12 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginTop: 60,
     },
+    logoImage: {
+        flex: 1,
+        height: '100%',
+        width: '100%',
+        backgroundColor: '#1A73E8'
+    },
     formContainer: {
         paddingHorizontal: 15,
         paddingVertical: 30,
