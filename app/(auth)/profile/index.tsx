@@ -61,7 +61,6 @@ export default function Profile() {
         loadUserData();
     }, []);
 
-
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
