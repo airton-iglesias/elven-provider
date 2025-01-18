@@ -9,6 +9,7 @@ import { AntDesign } from '@expo/vector-icons';
 import DeviceCard from '@/components/deviceCard';
 import DeviceSkeleton from '@/components/deviceSkeleton';
 import { fontSize } from '@/constants/fonts';
+import { ACS_IP_ADRESS } from '@/constants/ipAdress';
 
 type DeviceData = {
     id: string;
@@ -35,7 +36,7 @@ export default function Devices() {
     };
 
     const fetchRouterID = async (userSerial: string) => {
-        const url = `http://192.168.0.7:7557/devices/?device=${userSerial}`;
+        const url = `http://${ACS_IP_ADRESS}/devices/?device=${userSerial}`;
         const response = await fetch(url, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
@@ -55,7 +56,7 @@ export default function Devices() {
     };
 
     const refreshHostInfo = async (encodedRouterID: string) => {
-        const url = `http://192.168.0.7:7557/devices/${encodedRouterID}/tasks?connection_request`;
+        const url = `http://${ACS_IP_ADRESS}/devices/${encodedRouterID}/tasks?connection_request`;
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -68,7 +69,7 @@ export default function Devices() {
     };
 
     const fetchDevicesList = async (userSerial: string) => {
-        const url = `http://192.168.0.7:7557/devices/?device=${userSerial}`;
+        const url = `http://${ACS_IP_ADRESS}/devices/?device=${userSerial}`;
         const response = await fetch(url, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },

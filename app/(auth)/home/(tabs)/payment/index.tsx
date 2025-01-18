@@ -20,6 +20,7 @@ import BarCodeModal from '@/components/barCodeModal';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MIKWEB_TOKEN } from '@/constants/tokens';
 
 
 export default function Payment() {
@@ -67,7 +68,7 @@ export default function Payment() {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+                        'Authorization': `${MIKWEB_TOKEN}`
                     }
                 });
 

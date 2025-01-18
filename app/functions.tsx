@@ -1,3 +1,4 @@
+import { MIKWEB_TOKEN } from "@/constants/tokens";
 import { SignInData } from "@/schemas/authSchemas";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Router } from "expo-router";
@@ -54,7 +55,7 @@ const onSubmit = async (
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+                'Authorization': `${MIKWEB_TOKEN}`
             }
         });
         if (!response.ok) {

@@ -18,6 +18,7 @@ import * as Sharing from 'expo-sharing';
 import BillSkeleton from '@/components/billSkeketon';
 import { Skeleton } from 'moti/skeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MIKWEB_TOKEN } from '@/constants/tokens';
 
 export default function PaymentDetails() {
     const { id } = useLocalSearchParams();
@@ -44,7 +45,7 @@ export default function PaymentDetails() {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
+                        'Authorization': `${MIKWEB_TOKEN}`
                     }
                 });
 

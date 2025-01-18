@@ -14,6 +14,7 @@ import WifiPasswordModal from '@/components/wifiPasswordModal';
 import WifiNameModal from '@/components/wifiNameModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import { ACS_IP_ADRESS } from '@/constants/ipAdress';
 
 const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 10000) => {
     return Promise.race([
@@ -49,7 +50,7 @@ export default function Wifi() {
     };
 
     const getDeviceId = async (serial: string): Promise<string> => {
-        const url = `http://192.168.0.7:7557/devices/?device=${serial}`;
+        const url = `http://${ACS_IP_ADRESS}/devices/?device=${serial}`;
         try {
             const response: any = await fetchWithTimeout(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
             if (!response.ok) throw new Error('Erro ao buscar o dispositivo.');
@@ -75,7 +76,7 @@ export default function Wifi() {
             const id = await getDeviceId(serial);
             const encodedRouterID = encodeURIComponent(id);
 
-            const url = `http://192.168.0.7:7557/devices/${encodedRouterID}/tasks?connection_request`;
+            const url = `http://${ACS_IP_ADRESS}/devices/${encodedRouterID}/tasks?connection_request`;
             const response: any = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -108,7 +109,7 @@ export default function Wifi() {
             const id = await getDeviceId(serial);
             const encodedRouterID = encodeURIComponent(id);
 
-            const url = `http://192.168.0.7:7557/devices/${encodedRouterID}/tasks?connection_request`;
+            const url = `http://${ACS_IP_ADRESS}/devices/${encodedRouterID}/tasks?connection_request`;
             const response: any = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
