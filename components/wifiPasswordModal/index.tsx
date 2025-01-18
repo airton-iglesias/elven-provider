@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import React, { useState } from "react";
 import { getWifiSchema, WifiData } from "@/schemas/wifiSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
+import WarningIcon from "@/assets/icons/warningIcon";
 
 
 export default function WifiPasswordModal({ isModalVisible, setIsModalVisible, isPasswordChanging, changePassword }: any) {
@@ -42,6 +43,15 @@ export default function WifiPasswordModal({ isModalVisible, setIsModalVisible, i
                                         borderRadius: 10
                                     }}
                                 />
+                            </View>
+
+                            <View style={styles.modalWarningContainer}>
+                                <View style={styles.modalWarningContent}>
+                                    <WarningIcon />
+                                    <Text style={styles.modalWarningText}>
+                                        Ao alterar a senha da sua rede Wi-Fi, a conexão será automaticamente interrompida. Será necessário reconectar manualmente utilizando a nova senha da rede.
+                                    </Text>
+                                </View>
                             </View>
 
                             <View style={[styles.modalRow, { gap: 10 }]}>
@@ -171,5 +181,21 @@ const styles = StyleSheet.create({
         borderColor: '#D96A0B',
         minHeight: 80,
         textAlignVertical: 'center'
-    }
+    },
+    modalWarningContainer: {
+        backgroundColor: '#FFE69C',
+        borderRadius: 10,
+        width: '100%',
+        padding: 10
+    },
+    modalWarningContent: {
+        width: '100%',
+        flexDirection: 'row',
+        gap: 10,
+        alignItems: 'center'
+    },
+    modalWarningText: {
+        flex: 1,
+        color: '#997404'
+    },
 });

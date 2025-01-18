@@ -222,15 +222,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#888888',
     },
-    statusButton: {
-        paddingVertical: 6,
+    statusButton: {  
         borderRadius: 999,
         alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 12,
         marginTop: 3,
         width: 70,
         height: 25,
-        justifyContent: 'center',
     },
     statusText: {
         color: '#FFFFFF',

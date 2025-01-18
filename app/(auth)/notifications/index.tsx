@@ -22,36 +22,38 @@ export default function Notifications() {
 
     useEffect(() => {
         const requestNotifications: Notification[] = [
-            {
-                id: "1",
-                title: "Titulo da notificação",
-                description:
-                    "Descrição 1",
-            },
-            {
-                id: "2",
-                title: "Titulo da notificação",
-                description:
-                    "Descrição 2",
-            },
-            {
-                id: "3",
-                title: "Titulo da notificação",
-                description:
-                    "Essa é uma breve descrição de um item de notificação que irá ser implementado em breve...",
-            },
-            {
-                id: "4",
-                title: "Titulo da notificação",
-                description:
-                    "Essa é uma breve descrição de um item de notificação que irá ser implementado em breve... ",
-            },
-            {
-                id: "5",
-                title: "Titulo da notificação",
-                description:
-                    "Essa é uma breve descrição de um item de notificação que irá ser implementado em breve...",
-            },
+            /*        
+                {
+                    id: "1",
+                    title: "Titulo da notificação",
+                    description:
+                        "Descrição 1",
+                },
+                {
+                    id: "2",
+                    title: "Titulo da notificação",
+                    description:
+                        "Descrição 2",
+                },
+                {
+                    id: "3",
+                    title: "Titulo da notificação",
+                    description:
+                        "Essa é uma breve descrição de um item de notificação que irá ser implementado em breve...",
+                },
+                {
+                    id: "4",
+                    title: "Titulo da notificação",
+                    description:
+                        "Essa é uma breve descrição de um item de notificação que irá ser implementado em breve... ",
+                },
+                {
+                    id: "5",
+                    title: "Titulo da notificação",
+                    description:
+                        "Essa é uma breve descrição de um item de notificação que irá ser implementado em breve...",
+                },
+            */
         ];
 
         setTimeout(() => {
@@ -68,37 +70,43 @@ export default function Notifications() {
                     <AntDesign name="close" size={28} color="black" />
                 </TouchableOpacity>
             </View>
-            {isLoading ? (
-                <NotificationSkeleton />
-            ) : (
-                <FlatList
-                    data={notifications}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <View style={styles.notificationItem}>
-                            <TouchableOpacity
-                                style={styles.notificationButton}
-                                onPress={() => {
-                                    setSelectedNotificationDescription(item.description);
-                                    setIsInformativeModalVisible(true);
-                                }}
-                            >
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name="alert-circle-outline" size={30} color="#fff" />
+            {isLoading ? (<NotificationSkeleton />) : (
+                notifications.length > 0 ?
+                    <View>
+                        <FlatList
+                            data={notifications}
+                            keyExtractor={(item) => item.id}
+                            renderItem={({ item }) => (
+                                <View style={styles.notificationItem}>
+                                    <TouchableOpacity
+                                        style={styles.notificationButton}
+                                        onPress={() => {
+                                            setSelectedNotificationDescription(item.description);
+                                            setIsInformativeModalVisible(true);
+                                        }}
+                                    >
+                                        <View style={styles.iconContainer}>
+                                            <Ionicons name="alert-circle-outline" size={30} color="#fff" />
+                                        </View>
+                                        <View style={styles.textContainer}>
+                                            <Text style={styles.title}>{item.title}</Text>
+                                            <Text style={styles.description} numberOfLines={2}>
+                                                {item.description}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.arrowContainer}>
+                                            <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
+                                        </View>
+                                    </TouchableOpacity>
                                 </View>
-                                <View style={styles.textContainer}>
-                                    <Text style={styles.title}>{item.title}</Text>
-                                    <Text style={styles.description} numberOfLines={2}>
-                                        {item.description}
-                                    </Text>
-                                </View>
-                                <View style={styles.arrowContainer}>
-                                    <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                />
+                            )}
+                        />
+                    </View>
+                    :
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 100 }}>
+                        <Text style={{ color: '#000', fontSize: fontSize.labels.medium }}>Você ainda não possui notificações.</Text>
+                    </View>
+
             )}
 
             <NotificationModal

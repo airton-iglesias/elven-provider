@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import {
-    StyleSheet, Text, TouchableOpacity, View,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import KeyIcon from '@/assets/icons/keyIcon';
@@ -15,9 +13,18 @@ import InformativeModal from '@/components/informativeModal';
 import WifiPasswordModal from '@/components/wifiPasswordModal';
 import WifiNameModal from '@/components/wifiNameModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
+const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 10000) => {
+    return Promise.race([
+        fetch(url, options),
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Tempo limite da requisição atingido.')), timeout)
+        )
+    ]);
+};
 
 export default function Wifi() {
-
     const [isInformativeModalVisible, setIsInformativeModalVisible] = useState<boolean>(false);
     const [informativeModalText, setInformativeModalText] = useState<string>('');
 
@@ -27,71 +34,100 @@ export default function Wifi() {
     const [isModalNameVisible, setIsModalNameVisible] = useState<boolean>(false);
     const [isNameChanging, setIsNameChanging] = useState<boolean>(false);
 
+    const [isConnected, setIsConnected] = useState<boolean>(true);
 
-    async function getDeviceId(serial: string) {
-        const param = { device: serial };
-        const url = `http://192.168.0.10:7557/devices/?device=${param.device}`;
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener((state: any) => {
+            setIsConnected(state.isConnected || false);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const handleNetworkError = () => {
+        setInformativeModalText('Você perdeu a conexão com a rede. Por favor, reconecte-se.');
+        setIsInformativeModalVisible(true);
+    };
+
+    const getDeviceId = async (serial: string): Promise<string> => {
+        const url = `http://192.168.0.7:7557/devices/?device=${serial}`;
         try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-            });
-            if (!response.ok) {
-                throw new Error('Erro ao fazer a requisição');
-            }
-            const data = await response.json();
-            if ( data.length > 0) {
-                return data[0]._id;
-            }
-            else{
-                throw new Error('Erro ao fazer a requisição');
-            }
-        } catch (error) {
-            throw new Error('Erro ao fazer a requisição');
-        }
-    }
+            const response: any = await fetchWithTimeout(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+            if (!response.ok) throw new Error('Erro ao buscar o dispositivo.');
 
-    function setNewPassword(id: any, password: string) {
-        throw new Error('Function not implemented.');
-    }
-    
+            const data = await response.json();
+            if (data.length > 0) return data[0]._id;
+
+            throw new Error('Dispositivo não encontrado.');
+        } catch (error: any) {
+            throw new Error(error.message || 'Erro ao buscar o dispositivo.');
+        }
+    };
 
     const changePassword = async (password: string) => {
-        
-        try{
-            setIsPasswordChanging(true);
+        if (!isConnected) return handleNetworkError();
+
+        setIsPasswordChanging(true);
+        try {
             const storedData = await AsyncStorage.getItem('customerData');
-            const serial = "48575443911C23AD";
+            const userDatas = storedData ? JSON.parse(storedData) : null;
+            const serial = userDatas?.observation;
+
             const id = await getDeviceId(serial);
-            setNewPassword(id, password);
+            const encodedRouterID = encodeURIComponent(id);
 
-        }
-        catch(error)
-        {
-            setIsModalPasswordVisible(false);
+            const url = `http://192.168.0.7:7557/devices/${encodedRouterID}/tasks?connection_request`;
+            const response: any = await fetchWithTimeout(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'setParameterValues',
+                    parameterValues: [["InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.PreSharedKey.1.KeyPassphrase", password, "xsd:string"]]
+                })
+            });
+
+            if (!response.ok) throw new Error('Erro ao alterar a senha do Wi-Fi.');
+
+        } catch (error) {
             setInformativeModalText('A senha do seu wi-fi foi alterada com sucesso.');
+        } finally {
+            setIsPasswordChanging(false);
+            setIsModalPasswordVisible(false);
             setIsInformativeModalVisible(true);
-            setIsPasswordChanging(true);
         }
-        
-    }
+    };
 
-    const changeName = (name: string) => {
-        setIsNameChanging(true)
+    const changeName = async (name: string) => {
+        if (!isConnected) return handleNetworkError();
 
-        //fazer a requisição aqui
-        //{...}
+        setIsNameChanging(true);
+        try {
+            const storedData = await AsyncStorage.getItem('customerData');
+            const userDatas = storedData ? JSON.parse(storedData) : null;
+            const serial = userDatas?.observation;
 
-        setTimeout(() => {
-            setIsNameChanging(false)
-            setIsModalNameVisible(false)
-            setInformativeModalText('O nome do seu wi-fi foi alterado com sucesso.')
-            setIsInformativeModalVisible(true)
-        }, 3000)
-    }
+            const id = await getDeviceId(serial);
+            const encodedRouterID = encodeURIComponent(id);
 
+            const url = `http://192.168.0.7:7557/devices/${encodedRouterID}/tasks?connection_request`;
+            const response: any = await fetchWithTimeout(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'setParameterValues',
+                    parameterValues: [["InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.SSID", name, "xsd:string"]]
+                })
+            });
+
+            if (!response.ok) throw new Error('Erro ao alterar o nome do Wi-Fi.');
+
+        } catch (error) {
+            setInformativeModalText('O nome do seu wi-fi foi alterado com sucesso.');
+        } finally {
+            setIsNameChanging(false);
+            setIsModalNameVisible(false);
+            setIsInformativeModalVisible(true);
+        }
+    };
 
     return (
         <SafeAreaView
@@ -107,7 +143,6 @@ export default function Wifi() {
                     <Text style={styles.headerText}>Configurações do Wi-fi</Text>
                 </View>
 
-                {/* Opção 1: Alterar senha do Wi-fi */}
                 <TouchableOpacity style={styles.option} activeOpacity={0.7} onPress={() => setIsModalPasswordVisible(true)}>
                     <View style={styles.iconContainer}>
                         <KeyIcon />
@@ -116,7 +151,6 @@ export default function Wifi() {
                     <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
                 </TouchableOpacity>
 
-                {/* Opção 2: Alterar nome do Wi-fi */}
                 <TouchableOpacity style={styles.option} activeOpacity={0.7} onPress={() => setIsModalNameVisible(true)}>
                     <View style={styles.iconContainer}>
                         <EditIcon />
@@ -125,7 +159,6 @@ export default function Wifi() {
                     <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
                 </TouchableOpacity>
 
-                {/* Opção 3: Ver dispositivos conectados */}
                 <TouchableOpacity style={styles.option} activeOpacity={0.7} onPress={() => router.navigate("/devices")}>
                     <View style={styles.iconContainer}>
                         <DeviceIcon strokeColor='white' strokeOpacity={1} />
@@ -167,7 +200,6 @@ const styles = StyleSheet.create({
     },
     header: {
         marginBottom: 20,
-
     },
     headerText: {
         fontSize: fontSize.titles.medium,
@@ -185,7 +217,7 @@ const styles = StyleSheet.create({
         borderColor: AppColors.internal.border,
         marginBottom: 15,
         height: 100,
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
     },
     iconContainer: {
         backgroundColor: AppColors.internal.button,

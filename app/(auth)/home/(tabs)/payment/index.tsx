@@ -27,8 +27,7 @@ export default function Payment() {
     const [paymentDay, setPaymentDay] = useState<string>('');
     const [billings, setBillings] = useState<any>([]);
     const [currentInvoice, setCurrentInvoice] = useState<any>(null);
-
-    // Variáveis de UI
+ 
     const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
     const [isPixCodeModalVisible, setIsPixCodeModalVisible] = useState<boolean>(false);
     const [isBarCodeModalVisible, setIsBarCodeModalVisible] = useState<boolean>(false);
@@ -127,7 +126,6 @@ export default function Payment() {
         }
     };
 
-    // Função para compartilhar a fatura
     const shareInvoice = async (): Promise<void> => {
         if (!currentInvoice?.integration_link) {
             ToastAndroid.show('O link da fatura não está disponível.', ToastAndroid.SHORT);
@@ -137,7 +135,6 @@ export default function Payment() {
         try {
             const fileUri: string = FileSystem.cacheDirectory + `${currentInvoice.id}.pdf`;
 
-            // Baixar o arquivo remoto e salvar localmente
             const downloadResult = await FileSystem.downloadAsync(
                 currentInvoice.integration_link,
                 fileUri

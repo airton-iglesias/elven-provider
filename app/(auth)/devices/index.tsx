@@ -1,85 +1,170 @@
 import React, { useEffect, useState } from 'react';
-import {
-    StyleSheet, Text, View,
-    FlatList,
-    TouchableOpacity,
-} from 'react-native';
-import * as Device from 'expo-device';
-
-import { useLocale } from '@/contexts/TranslationContext';
+import { StyleSheet, Text, TouchableOpacity, View, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fontSize } from '@/constants/fonts';
-import DeviceIcon from '@/assets/icons/deviceIcon';
-import { AppColors } from '@/constants/colors';
-import { AntDesign } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Device from 'expo-device';
 import { router } from 'expo-router';
+import { AntDesign } from '@expo/vector-icons';
+
 import DeviceCard from '@/components/deviceCard';
 import DeviceSkeleton from '@/components/deviceSkeleton';
+import { fontSize } from '@/constants/fonts';
 
-// Remover a declaração global de devicesList
-// const devicesList = [ ... ]; // Removido para evitar conflito
+type DeviceData = {
+    id: string;
+    name: string;
+    isActive: boolean;
+    ip: string;
+    mac: string;
+};
 
 export default function Devices() {
     const [deviceName, setDeviceName] = useState<string>('Carregando...');
     const [deviceIsActive, setDeviceIsActive] = useState<boolean>(false);
-    const [devicesList, setDevicesList] = useState<any[]>([]);
+    const [devicesList, setDevicesList] = useState<DeviceData[]>([]);
+    const [serialNumber, setSerialNumber] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const getDeviceName = async () => {
         if (Device.isDevice) {
             const name = Device.deviceName || 'Dispositivo Desconhecido';
             setDeviceName(name);
-            return name;
         } else {
             setDeviceName('Simulador');
-            return 'Simulador';
         }
     };
 
-    const fetchDevicesList = async () => {
-        if (!isLoading) { setIsLoading(true); }
+    const fetchRouterID = async (userSerial: string) => {
+        const url = `http://192.168.0.7:7557/devices/?device=${userSerial}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
 
+        if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.statusText}`);
+        }
 
-        // Simular atraso de rede
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        const data = await response.json();
 
-        const requestDevicesList = [
-            { id: '1', name: 'M2012K11AG', isActive: true },
-            { id: '2', name: 'Nome do dispositivo', isActive: false },
-            { id: '3', name: 'Nome do dispositivo', isActive: false },
-            { id: '4', name: 'Nome do dispositivo', isActive: false },
-            { id: '5', name: 'Nome do dispositivo', isActive: false },
-        ];
+        if (!Array.isArray(data) || data.length === 0) {
+            throw new Error('Nenhum dado válido retornado para este serial.');
+        }
 
-        const currentDeviceName = await getDeviceName();
+        return data[0]._id;
+    };
 
-        // Filtrar a lista de dispositivos para remover o dispositivo atual
-        const filteredDevicesList = requestDevicesList.filter(
-            (device) => device.name !== currentDeviceName
-        );
+    const refreshHostInfo = async (encodedRouterID: string) => {
+        const url = `http://192.168.0.7:7557/devices/${encodedRouterID}/tasks?connection_request`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{"name":"refreshObject","objectName":"InternetGatewayDevice.LANDevice.*.Hosts.Host"}',
+        });
 
-        setDevicesList(filteredDevicesList);
+        if (!response.ok) {
+            throw new Error('Erro ao fazer a requisição de refresh.');
+        }
+    };
 
-        const matchedDevice = requestDevicesList.find(
-            (device) => device.name === currentDeviceName && device.isActive
-        );
+    const fetchDevicesList = async (userSerial: string) => {
+        const url = `http://192.168.0.7:7557/devices/?device=${userSerial}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
 
-        setDeviceIsActive(!!matchedDevice);
-        setIsLoading(false);
+        if (!response.ok) {
+            throw new Error('Erro ao buscar lista de dispositivos.');
+        }
+
+        const dataDevice = await response.json();
+        const hostsObj =
+            dataDevice?.[0]?.InternetGatewayDevice?.LANDevice?.[1]?.Hosts?.Host || {};
+
+        const deviceList = Object.keys(hostsObj)
+            .filter((key) => !key.startsWith('_'))
+            .map((key) => {
+                const hostData = hostsObj[key];
+                return {
+                    id: key,
+                    name: hostData?.HostName?._value || 'Desconhecido',
+                    isActive: hostData?.Active?._value || false,
+                    ip: hostData?.IPAddress?._value || '---',
+                    mac: hostData?.MACAddress?._value || '---',
+                };
+            });
+
+        setDevicesList(deviceList);
+    };
+
+    const initializeData = async () => {
+        try {
+            setIsLoading(true);
+            await getDeviceName();
+            const storedData = await AsyncStorage.getItem('customerData');
+            const userDatas = storedData ? JSON.parse(storedData) : null;
+            const userSerialNumber = userDatas?.observation;
+
+            if (!userSerialNumber) {
+                throw new Error('Não foi possível encontrar o serial no AsyncStorage.');
+            }
+
+            setSerialNumber(userSerialNumber);
+            const routerID = await fetchRouterID(userSerialNumber);
+            const encodedRouterID = encodeURIComponent(routerID);
+            await refreshHostInfo(encodedRouterID);
+            await fetchDevicesList(userSerialNumber);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
-        fetchDevicesList();
+        initializeData();
     }, []);
 
+    const handleRefresh = async () => {
+        try {
+            setIsLoading(true);
+            if (serialNumber) {
+                const routerID = await fetchRouterID(serialNumber);
+                const encodedRouterID = encodeURIComponent(routerID);
+                await refreshHostInfo(encodedRouterID);
+                await fetchDevicesList(serialNumber);
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar lista:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const sameNameActive = devicesList.filter(
+        (item) => item.name === deviceName && item.isActive === true
+    );
+
+    sameNameActive.sort((a, b) => Number(a.id) - Number(b.id));
+
+    const userDevice = sameNameActive.length > 0
+        ? sameNameActive[sameNameActive.length - 1]
+        : null;
+
+    const otherDevices = userDevice
+        ? devicesList.filter((item) => item.name !== userDevice.name)
+        : devicesList.filter((item) => item.name !== deviceName);
+
     return (
-        <SafeAreaView style={{ flex: 1, paddingHorizontal: 16 }}>
+        <SafeAreaView style={styles.container}>
             <FlatList
-                data={devicesList}
+                data={otherDevices}
                 keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
                 ListHeaderComponent={
                     <>
-                        {/* Cabeçalho */}
                         <View style={styles.section}>
                             <View style={styles.headerContainer}>
                                 <Text style={styles.headerText}>Seu dispositivo</Text>
@@ -87,116 +172,85 @@ export default function Devices() {
                                     <AntDesign name="close" size={28} color="black" />
                                 </TouchableOpacity>
                             </View>
+
                             {isLoading ? (
                                 <DeviceSkeleton />
+                            ) : userDevice ? (
+                                <DeviceCard
+                                    isActive={userDevice.isActive}
+                                    name={userDevice.name}
+                                    ip={userDevice.ip}
+                                    mac={userDevice.mac}
+                                />
                             ) : (
                                 <DeviceCard
                                     isActive={deviceIsActive}
-                                    name={deviceName || 'Dispositivo Desconhecido'}
+                                    name={deviceName || 'Desconhecido'}
                                 />
                             )}
                         </View>
 
-                        {/* Título da lista */}
-                        <View style={[styles.section, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+                        <View style={[styles.section, styles.listHeader]}>
                             <Text style={styles.sectionTitle}>Outros dispositivos</Text>
-                            <TouchableOpacity activeOpacity={0.7} disabled={isLoading} onPress={fetchDevicesList}>
+                            <TouchableOpacity
+                                activeOpacity={0.7}
+                                disabled={isLoading}
+                                onPress={handleRefresh}
+                            >
                                 <Text style={styles.refreshButton}>Atualizar</Text>
                             </TouchableOpacity>
                         </View>
                     </>
                 }
-                renderItem={({ item }) => (
+                renderItem={({ item }) =>
                     isLoading ? (
                         <DeviceSkeleton />
                     ) : (
                         <DeviceCard
                             isActive={item.isActive}
-                            name={item.name || 'Dispositivo Desconhecido'}
+                            name={item.name}
+                            ip={item.ip}
+                            mac={item.mac}
                         />
                     )
-                )}
-                contentContainerStyle={{ paddingBottom: 20, gap: 15 }}
-                showsVerticalScrollIndicator={false}
+                }
             />
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        paddingHorizontal: 16,
+    },
+    contentContainer: {
+        paddingBottom: 20,
+        gap: 15,
+    },
     headerContainer: {
         marginTop: 25,
         marginBottom: 20,
-        flexDirection: "row",
+        flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
     },
     headerText: {
         fontSize: fontSize.titles.medium,
-        fontWeight: "bold",
+        fontWeight: 'bold',
     },
     section: {
         marginVertical: 10,
-
+    },
+    listHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     sectionTitle: {
         fontSize: fontSize.titles.medium,
         fontWeight: 'bold',
         color: '#000',
-    },
-    deviceCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFF',
-        borderRadius: 15,
-        padding: 15,
-        borderWidth: 1,
-        borderColor: AppColors.internal.border,
-        height: 100
-    },
-    iconContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 999,
-        backgroundColor: AppColors.internal.button,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    deviceInfo: {
-        flex: 1,
-        marginLeft: 15,
-    },
-    deviceName: {
-        fontSize: fontSize.labels.medium,
-        color: '#000',
-    },
-    statusBadgeActive: {
-        marginTop: 8,
-        backgroundColor: '#15803D',
-        borderRadius: 12,
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        width: 75,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    statusTextActive: {
-        fontSize: fontSize.labels.medium,
-        color: '#FFF',
-    },
-    statusBadgeInactive: {
-        marginTop: 8,
-        backgroundColor: '#DC2626',
-        borderRadius: 12,
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        width: 75,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    statusTextInactive: {
-        fontSize: fontSize.labels.medium,
-        color: '#FFF',
     },
     refreshButton: {
         fontSize: fontSize.labels.medium,

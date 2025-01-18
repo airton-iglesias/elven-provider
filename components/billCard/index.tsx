@@ -146,10 +146,8 @@ const styles = StyleSheet.create({
     statusWrapper: {
         marginTop: 8,
         borderRadius: 12,
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        width: 75,
-        height: 24,
+        width: 70,
+        height: 25,
         alignItems: "center",
         justifyContent: "center",
     },

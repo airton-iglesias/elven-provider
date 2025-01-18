@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getWifiNameSchema, WifiNameData } from "@/schemas/wifiSchemas";
+import WarningIcon from "@/assets/icons/warningIcon";
 
 
 export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNameChanging, changeName }: any) {
@@ -19,6 +20,7 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
 
     const onSubmit = async (data: WifiNameData) => {
         changeName(data.name)
+
     }
 
     return (
@@ -44,6 +46,15 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
                                 />
                             </View>
 
+                            <View style={styles.modalWarningContainer}>
+                                <View style={styles.modalWarningContent}>
+                                    <WarningIcon />
+                                    <Text style={styles.modalWarningText}>
+                                        Ao alterar o nome da sua rede Wi-Fi, a conexão será automaticamente interrompida. Será necessário reconectar manualmente utilizando o novo nome da rede.
+                                    </Text>
+                                </View>
+                            </View>
+
                             <View style={[styles.modalRow, { gap: 10 }]}>
                                 <Controller
                                     control={control}
@@ -53,7 +64,7 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
                                             label={"Digite o novo nome do Wi-fi"}
                                             onChange={(text) => onChange(text)}
                                             onBlur={onBlur}
-                                            value={value}
+                                            
                                             error={errors.name?.message}
                                             maxLength={18}
                                             customLabelColor='#fff'
@@ -72,7 +83,7 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
                                             onChange={(text) => onChange(text)}
                                             label={"Repita o novo nome do Wi-fi"}
                                             onBlur={onBlur}
-                                            value={value}
+                                            
                                             error={errors.confirmName?.message}
                                             maxLength={18}
                                             customLabelColor='#fff'
@@ -169,5 +180,21 @@ const styles = StyleSheet.create({
         borderColor: '#D96A0B',
         minHeight: 80,
         textAlignVertical: 'center'
-    }
+    },
+    modalWarningContainer: {
+        backgroundColor: '#FFE69C',
+        borderRadius: 10,
+        width: '100%',
+        padding: 10
+    },
+    modalWarningContent: {
+        width: '100%',
+        flexDirection: 'row',
+        gap: 10,
+        alignItems: 'center'
+    },
+    modalWarningText: {
+        flex: 1,
+        color: '#997404'
+    },
 });

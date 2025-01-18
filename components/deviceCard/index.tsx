@@ -3,7 +3,7 @@ import { AppColors } from "@/constants/colors";
 import { fontSize } from "@/constants/fonts";
 import { View, StyleSheet, Text } from "react-native";
 
-export default function DeviceCard({isActive, name}: any) {
+export default function DeviceCard({isActive, name, ip, mac}: any) {
     return (
         <View style={styles.deviceCard}>
             <View style={styles.iconContainer}>
@@ -11,19 +11,11 @@ export default function DeviceCard({isActive, name}: any) {
             </View>
             <View style={styles.deviceInfo}>
                 <Text style={styles.deviceName}>{name}</Text>
+                <Text>IP: {ip}</Text>
+                <Text>Mac: {mac}</Text>
             </View>
-            <View
-                style={
-                    isActive ? styles.statusBadgeActive : styles.statusBadgeInactive
-                }
-            >
-                <Text
-                    style={
-                        isActive
-                            ? styles.statusTextActive
-                            : styles.statusTextInactive
-                    }
-                >
+            <View style={ isActive ? styles.statusBadgeActive : styles.statusBadgeInactive }>
+                <Text style={ isActive ? styles.statusTextActive : styles.statusTextInactive }>
                     {isActive ? 'Ativo' : 'Inativo'}
                 </Text>
             </View>
@@ -58,6 +50,7 @@ const styles = StyleSheet.create({
     deviceName: {
         fontSize: fontSize.labels.medium,
         color: '#000',
+        fontWeight: 'bold'
     },
     statusBadgeActive: {
         marginTop: 8,

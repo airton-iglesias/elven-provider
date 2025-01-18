@@ -41,7 +41,6 @@ export default function SigninScreen() {
         }
     };
 
-    // Effect to handle keyboard visibility changes
     useEffect(() => {
         KeyboardListener(setKeyboardIsVisible);
         checkIfUserIsLogged();

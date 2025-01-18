@@ -36,17 +36,17 @@ export default function Profile() {
 
                     // Preenche os campos com os dados carregados
                     const userData: userData = {
-                        name: result.full_name,
-                        birthDate: result.birth_date,
-                        cpf: result.cpf_cnpj,
-                        email: result.email,
-                        phone: result.cell_phone_number_1 || result.phone_number,
-                        street: result.street,
-                        number: result.number,
-                        neighborhood: result.neighborhood,
-                        city: result.city,
-                        state: result.state,
-                        zipCode: result.zip_code
+                        name: result.full_name || "Sem informação",
+                        birthDate: result.birth_date || "Sem informação",
+                        cpf: result.cpf_cnpj || "Sem informação",
+                        email: result.email || "Sem informação",
+                        phone: result.cell_phone_number_1 || result.phone_number || "Sem informação",
+                        street: result.street || "Sem informação",
+                        number: result.number || "Sem informação",
+                        neighborhood: result.neighborhood || "Sem informação",
+                        city: result.city || "Sem informação",
+                        state: result.state || "Sem informação",
+                        zipCode: result.zip_code || "Sem informação"
                     };
 
                     setUser(userData);
