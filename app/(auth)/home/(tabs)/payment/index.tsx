@@ -28,7 +28,7 @@ export default function Payment() {
     const [paymentDay, setPaymentDay] = useState<string>('');
     const [billings, setBillings] = useState<any>([]);
     const [currentInvoice, setCurrentInvoice] = useState<any>(null);
- 
+
     const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
     const [isPixCodeModalVisible, setIsPixCodeModalVisible] = useState<boolean>(false);
     const [isBarCodeModalVisible, setIsBarCodeModalVisible] = useState<boolean>(false);
@@ -162,14 +162,7 @@ export default function Payment() {
     }
 
     return (
-        <SafeAreaView
-            style={[
-                { flex: 1 },
-                isModalVisible || isInformativeModalVisible || isPixCodeModalVisible || isBarCodeModalVisible
-                    ? { backgroundColor: '#0D3A75' }
-                    : { backgroundColor: AppColors.external.primary },
-            ]}
-        >
+        <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.external.primary }}>
             <TopBar />
 
             <View style={{ flex: 1, backgroundColor: '#F5F5F5', paddingTop: 24 }}>
@@ -261,16 +254,6 @@ export default function Payment() {
                     )}
                 </View>
             </View>
-
-            <BillDateSelectModal
-                currentDay={paymentDay}
-                isModalVisible={isModalVisible}
-                setIsModalVisible={setIsModalVisible}
-                onDateSelect={(day: string) => {
-                    changePaymentDay(day);
-                }}
-                isChangingPaymentDay={isChangingPaymentDay}
-            />
 
             {!isLoading && !isFirstMonth && (
                 <PixCodeModal

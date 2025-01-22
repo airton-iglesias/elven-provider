@@ -113,7 +113,6 @@ export default function BarCodeModal({ isModalVisible, setIsModalVisible, id }: 
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalWrapper: {
         flex: 1,

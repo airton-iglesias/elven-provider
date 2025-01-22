@@ -120,7 +120,6 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalWrapper: {
         flex: 1,

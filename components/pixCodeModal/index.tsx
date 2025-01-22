@@ -112,7 +112,6 @@ export default function PixCodeModal({ isModalVisible, setIsModalVisible, id, va
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalWrapper: {
         flex: 1,

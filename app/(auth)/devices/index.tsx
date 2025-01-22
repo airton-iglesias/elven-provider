@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,112 +20,100 @@ type DeviceData = {
 };
 
 export default function Devices() {
-    const [deviceName, setDeviceName] = useState<string>('Carregando...');
-    const [deviceIsActive, setDeviceIsActive] = useState<boolean>(false);
+    const [deviceName, setDeviceName] = useState('Carregando...');
     const [devicesList, setDevicesList] = useState<DeviceData[]>([]);
-    const [serialNumber, setSerialNumber] = useState<string>('');
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [serialNumber, setSerialNumber] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
 
-    const getDeviceName = async () => {
-        if (Device.isDevice) {
-            const name = Device.deviceName || 'Dispositivo Desconhecido';
-            setDeviceName(name);
-        } else {
-            setDeviceName('Simulador');
-        }
-    };
+    const getDeviceName = useCallback(async () => {
+        const name = Device.isDevice ? Device.deviceName || 'Dispositivo Desconhecido' : 'Simulador';
+        setDeviceName(name);
+    }, []);
 
-    const fetchRouterID = async (userSerial: string) => {
-        const url = `http://${ACS_IP_ADRESS}/devices/?device=${userSerial}`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
+    const fetchRouterID = useCallback(async (userSerial: string) => {
+        const query = encodeURIComponent(JSON.stringify({ "_deviceId._SerialNumber": userSerial }));
+        const projection = encodeURIComponent("_id,InternetGatewayDevice.LANDevice,_deviceId");
+        const url = `http://${ACS_IP_ADRESS}/devices/?query=${query}&projection=${projection}`;
 
-        if (!response.ok) {
-            throw new Error(`Erro na requisição: ${response.statusText}`);
-        }
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Erro ao buscar ID do roteador: ${response.statusText}`);
 
         const data = await response.json();
-
         if (!Array.isArray(data) || data.length === 0) {
-            throw new Error('Nenhum dado válido retornado para este serial.');
+            throw new Error('Nenhum dado encontrado para este serial.');
         }
 
-        return data[0]._id;
-    };
+        const routerID = data[0]._id;
 
-    const refreshHostInfo = async (encodedRouterID: string) => {
+        const needsURICoding = /[/?&]/.test(routerID);
+
+        return needsURICoding ? encodeURIComponent(routerID) : routerID;
+    }, []);
+
+    const refreshHostInfo = useCallback(async (encodedRouterID: string) => {
         const url = `http://${ACS_IP_ADRESS}/devices/${encodedRouterID}/tasks?connection_request`;
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: '{"name":"refreshObject","objectName":"InternetGatewayDevice.LANDevice.*.Hosts.Host"}',
+            body: JSON.stringify({ name: 'refreshObject', objectName: 'InternetGatewayDevice.LANDevice.*.Hosts.Host' }),
         });
 
-        if (!response.ok) {
-            throw new Error('Erro ao fazer a requisição de refresh.');
-        }
-    };
+        if (!response.ok) throw new Error('Erro ao atualizar informações do host.');
+    }, []);
 
-    const fetchDevicesList = async (userSerial: string) => {
-        const url = `http://${ACS_IP_ADRESS}/devices/?device=${userSerial}`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
+    const fetchDevicesList = useCallback(async (userSerial: string) => {
+        const query = JSON.stringify({ "_deviceId._SerialNumber": userSerial });
+        const projection = "_id,InternetGatewayDevice.LANDevice,_deviceId";
+        const url = `http://${ACS_IP_ADRESS}/devices/?query=${query}&projection=${projection}`;
 
-        if (!response.ok) {
-            throw new Error('Erro ao buscar lista de dispositivos.');
-        }
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Erro ao buscar lista de dispositivos.');
 
         const dataDevice = await response.json();
-        const hostsObj =
-            dataDevice?.[0]?.InternetGatewayDevice?.LANDevice?.[1]?.Hosts?.Host || {};
+        const hosts = dataDevice?.[0]?.InternetGatewayDevice?.LANDevice?.[1]?.Hosts?.Host || {};
 
-        const deviceList = Object.keys(hostsObj)
-            .filter((key) => !key.startsWith('_'))
-            .map((key) => {
-                const hostData = hostsObj[key];
-                return {
-                    id: key,
-                    name: hostData?.HostName?._value || 'Desconhecido',
-                    isActive: hostData?.Active?._value || false,
-                    ip: hostData?.IPAddress?._value || '---',
-                    mac: hostData?.MACAddress?._value || '---',
-                };
-            });
+        const deviceList = Object.entries(hosts)
+            .filter(([key]) => !key.startsWith('_'))
+            .map(([id, host]: any) => ({
+                id,
+                name: host?.HostName?._value || 'Desconhecido',
+                isActive: host?.Active?._value || false,
+                ip: host?.IPAddress?._value || '---',
+                mac: host?.MACAddress?._value || '---',
+            }));
 
         setDevicesList(deviceList);
-    };
+    }, []);
 
-    const initializeData = async () => {
+    const initializeData = useCallback(async () => {
         try {
             setIsLoading(true);
             await getDeviceName();
+
             const storedData = await AsyncStorage.getItem('customerData');
             const userDatas = storedData ? JSON.parse(storedData) : null;
             const userSerialNumber = userDatas?.observation;
 
             if (!userSerialNumber) {
-                throw new Error('Não foi possível encontrar o serial no AsyncStorage.');
+                throw new Error('Serial não encontrado no AsyncStorage.');
             }
 
             setSerialNumber(userSerialNumber);
             const routerID = await fetchRouterID(userSerialNumber);
             const encodedRouterID = encodeURIComponent(routerID);
+
             await refreshHostInfo(encodedRouterID);
             await fetchDevicesList(userSerialNumber);
         } catch (error) {
-            console.error(error);
+            console.error('Erro ao inicializar:', error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [getDeviceName, fetchRouterID, refreshHostInfo, fetchDevicesList]);
 
     useEffect(() => {
         initializeData();
-    }, []);
+    }, [initializeData]);
 
     const handleRefresh = async () => {
         try {
@@ -173,30 +161,23 @@ export default function Devices() {
                                     <AntDesign name="close" size={28} color="black" />
                                 </TouchableOpacity>
                             </View>
-
                             {isLoading ? (
                                 <DeviceSkeleton />
-                            ) : userDevice ? (
-                                <DeviceCard
-                                    isActive={userDevice.isActive}
-                                    name={userDevice.name}
-                                    ip={userDevice.ip}
-                                    mac={userDevice.mac}
-                                />
                             ) : (
                                 <DeviceCard
-                                    isActive={deviceIsActive}
-                                    name={deviceName || 'Desconhecido'}
+                                    isActive={userDevice?.isActive || false}
+                                    name={userDevice?.name || deviceName}
+                                    ip={userDevice?.ip || '---'}
+                                    mac={userDevice?.mac || '---'}
                                 />
                             )}
                         </View>
-
                         <View style={[styles.section, styles.listHeader]}>
                             <Text style={styles.sectionTitle}>Outros dispositivos</Text>
                             <TouchableOpacity
+                                onPress={handleRefresh}
                                 activeOpacity={0.7}
                                 disabled={isLoading}
-                                onPress={handleRefresh}
                             >
                                 <Text style={styles.refreshButton}>Atualizar</Text>
                             </TouchableOpacity>
@@ -204,15 +185,8 @@ export default function Devices() {
                     </>
                 }
                 renderItem={({ item }) =>
-                    isLoading ? (
-                        <DeviceSkeleton />
-                    ) : (
-                        <DeviceCard
-                            isActive={item.isActive}
-                            name={item.name}
-                            ip={item.ip}
-                            mac={item.mac}
-                        />
+                    isLoading ? <DeviceSkeleton /> : (
+                        <DeviceCard {...item} />
                     )
                 }
             />
@@ -223,11 +197,11 @@ export default function Devices() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingHorizontal: 16,
+        paddingHorizontal: 16
     },
     contentContainer: {
         paddingBottom: 20,
-        gap: 15,
+        gap: 15
     },
     headerContainer: {
         marginTop: 25,
@@ -238,23 +212,23 @@ const styles = StyleSheet.create({
     },
     headerText: {
         fontSize: fontSize.titles.medium,
-        fontWeight: 'bold',
+        fontWeight: 'bold'
     },
     section: {
-        marginVertical: 10,
+        marginVertical: 10
     },
     listHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'center'
     },
     sectionTitle: {
         fontSize: fontSize.titles.medium,
         fontWeight: 'bold',
-        color: '#000',
+        color: '#000'
     },
     refreshButton: {
         fontSize: fontSize.labels.medium,
-        color: '#1A73E8',
+        color: '#1A73E8'
     },
 });

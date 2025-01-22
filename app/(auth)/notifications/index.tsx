@@ -22,7 +22,7 @@ export default function Notifications() {
 
     useEffect(() => {
         const requestNotifications: Notification[] = [
-            /*        
+            /* 
                 {
                     id: "1",
                     title: "Titulo da notificação",

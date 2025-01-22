@@ -1,2 +1,2 @@
-export const ACS_IP_ADRESS = '192.168.0.7:7557'
+export const ACS_IP_ADRESS = '186.233.92.114:7557'
 

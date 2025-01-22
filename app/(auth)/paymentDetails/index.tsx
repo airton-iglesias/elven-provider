@@ -138,11 +138,8 @@ export default function PaymentDetails() {
 
 
     return (
-        <SafeAreaView
-            style={[{ flex: 1 }, isInformativeModalVisible || isPixCodeModalVisible || isBarCodeModalVisible
-                ? { backgroundColor: '#7A7A7A' }
-                : { backgroundColor: '#F5F5F5' }]}
-        >
+        <SafeAreaView style={[{ flex: 1, backgroundColor: '#F5F5F5' }]}>
+
             <View style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
                 <View style={styles.headerContainer}>
                     <Text style={styles.headerText}>Fatura</Text>
