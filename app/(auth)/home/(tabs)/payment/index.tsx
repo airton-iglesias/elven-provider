@@ -9,7 +9,6 @@ import BarCodeIcon from '@/assets/icons/barCodeIcon';
 import PixIcon from '@/assets/icons/pixIcon';
 import { router } from 'expo-router';
 import TopBar from '@/components/topbar';
-import BillDateSelectModal from '@/components/billDateSelectModal';
 import ActionButton from '@/components/actionButton';
 import BillCard from '@/components/billCard';
 import BillSkeleton from '@/components/billSkeketon';

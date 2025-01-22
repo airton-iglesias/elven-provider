@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -43,12 +43,12 @@ export default function Wifi() {
         return () => unsubscribe();
     }, []);
 
-    const handleNetworkError = useCallback(() => {
+    const handleNetworkError = () => {
         setInformativeModalText('Você perdeu a conexão com a rede. Por favor, reconecte-se.');
         setIsInformativeModalVisible(true);
-    }, []);
+    };
 
-    const getDeviceId = useCallback(async (serial: string): Promise<string> => {
+    const getDeviceId = async (serial: string): Promise<string> => {
         const query = JSON.stringify({ "_deviceId._SerialNumber": serial });
         const projection = "_id";
 
@@ -60,13 +60,14 @@ export default function Wifi() {
         const data = await response.json();
         if (data.length === 0) throw new Error('Dispositivo não encontrado.');
 
-        const id = data[0]._id;
+        const routerID = data[0]._id;
 
-        return /[\/?&%#=]/.test(id) ? encodeURIComponent(id) : id;
-    }, []);
+        const encodeRouterID  = /[\/?&%#=]/.test(routerID) ? encodeURIComponent(routerID) : routerID;
 
-    const updateWiFiSettings = useCallback(
-        async (parameter: string, value: string, onSuccessMessage: string, onErrorMessage: string) => {
+        return encodeRouterID;
+    };
+
+    const updateWiFiSettings = async (parameter: string, value: string, onSuccessMessage: string, onErrorMessage: string) => {
             if (!isConnected) return handleNetworkError();
 
             try {
@@ -95,9 +96,7 @@ export default function Wifi() {
             } finally {
                 setIsInformativeModalVisible(true);
             }
-        },
-        [getDeviceId, handleNetworkError, isConnected]
-    );
+        };
 
     const changePassword = (password: string) => {
         setIsPasswordChanging(true);
