@@ -34,6 +34,14 @@
           "backgroundColor": "#1A73E8"
         }
       ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       "expo-localization"
     ],
     "experiments": {
@@ -42,6 +50,9 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "2a50b03b-bab4-43fb-98fb-b7ab2af18e6c"
       }
     }
   }

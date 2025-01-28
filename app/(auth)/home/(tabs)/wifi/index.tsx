@@ -62,49 +62,48 @@ export default function Wifi() {
 
         const routerID = data[0]._id;
 
-        const encodeRouterID  = /[\/?&%#=]/.test(routerID) ? encodeURIComponent(routerID) : routerID;
+        const encodeRouterID = /[\/?&%#=]/.test(routerID) ? encodeURIComponent(routerID) : routerID;
 
         return encodeRouterID;
     };
 
-    const updateWiFiSettings = async (parameter: string, value: string, onSuccessMessage: string, onErrorMessage: string) => {
+    const updateWiFiSettings = async (parameter: string, value: string, onErrorMessage: string) => {
+        if (!isConnected) return handleNetworkError();
+
+        try {
+            const storedData = await AsyncStorage.getItem('customerData');
+            const userDatas = storedData ? JSON.parse(storedData) : null;
+            const serial = userDatas?.observation;
+
+            const id = await getDeviceId(serial);
+            const url = `http://${ACS_IP_ADRESS}/devices/${id}/tasks?connection_request`;
+
+            const response: any = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'setParameterValues',
+                    parameterValues: [[parameter, value, 'xsd:string']],
+                }),
+            });
+
+            if (!response.ok) throw new Error(onErrorMessage);
+-
+            setInformativeModalText(`${onErrorMessage}`);
+
+        } catch (e) {
             if (!isConnected) return handleNetworkError();
-
-            try {
-                const storedData = await AsyncStorage.getItem('customerData');
-                const userDatas = storedData ? JSON.parse(storedData) : null;
-                const serial = userDatas?.observation;
-
-                const id = await getDeviceId(serial);
-                const url = `http://${ACS_IP_ADRESS}/devices/${id}/tasks?connection_request`;
-
-                const response: any = await fetchWithTimeout(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: 'setParameterValues',
-                        parameterValues: [[parameter, value, 'xsd:string']],
-                    }),
-                });
-
-                if (!response.ok) throw new Error(onErrorMessage);
-
-                setInformativeModalText(`${onSuccessMessage}`);
-
-            } catch (e){
-                if (!isConnected) return handleNetworkError();
-            } finally {
-                setIsInformativeModalVisible(true);
-            }
-        };
+        } finally {
+            setIsInformativeModalVisible(true);
+        }
+    };
 
     const changePassword = (password: string) => {
         setIsPasswordChanging(true);
         updateWiFiSettings(
             'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.PreSharedKey.1.KeyPassphrase',
             password,
-            'A senha do Wi-Fi foi alterada com sucesso.',
-            'Erro ao alterar a senha do Wi-Fi.'
+            'Aconteceu um erro ao alterar a senha do Wi-Fi, tente novamente.'
         ).finally(() => {
             setIsPasswordChanging(false);
             setIsModalPasswordVisible(false);
@@ -116,8 +115,7 @@ export default function Wifi() {
         updateWiFiSettings(
             'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.SSID',
             name,
-            'O nome do Wi-Fi foi alterado com sucesso.',
-            'Erro ao alterar o nome do Wi-Fi.'
+            'Aconteceu um erro ao alterar o nome do Wi-Fi, tente novamente.'
         ).finally(() => {
             setIsNameChanging(false);
             setIsModalNameVisible(false);
@@ -162,9 +160,13 @@ export default function Wifi() {
 
             <InformativeModal
                 isModalVisible={isInformativeModalVisible}
-                setIsModalVisible={setIsInformativeModalVisible}
+                setIsModalVisible={(visible: any) => {
+                    setIsInformativeModalVisible(visible);
+                    if (!visible) setInformativeModalText('');
+                }}
                 text={informativeModalText}
             />
+
 
             <WifiPasswordModal
                 isModalVisible={isModalPasswordVisible}

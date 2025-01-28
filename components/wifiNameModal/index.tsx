@@ -66,7 +66,7 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
                                             onBlur={onBlur}
                                             
                                             error={errors.name?.message}
-                                            maxLength={18}
+                                            maxLength={32}
                                             customLabelColor='#fff'
                                             customFontSize={fontSize.labels.medium}
                                         />
@@ -83,9 +83,8 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
                                             onChange={(text) => onChange(text)}
                                             label={"Repita o novo nome do Wi-fi"}
                                             onBlur={onBlur}
-                                            
                                             error={errors.confirmName?.message}
-                                            maxLength={18}
+                                            maxLength={32}
                                             customLabelColor='#fff'
                                             customFontSize={fontSize.labels.medium}
                                         />

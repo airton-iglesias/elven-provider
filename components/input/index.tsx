@@ -61,6 +61,7 @@ const Input: React.FC<InputProps> = ({
             ) : null}
             <View style={styles.inputWrapper}>
                 <TextInput
+                    autoCapitalize={'none'}
                     cursorColor={'#212529'}
                     onFocus={() => setIsInputFocus(true)}
                     onBlur={() => {
