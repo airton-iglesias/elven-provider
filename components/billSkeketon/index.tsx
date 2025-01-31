@@ -23,13 +23,6 @@ export default function BillSkeleton() {
 }
 
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: AppColors.internal.border,
-    },
     cardPayment: {
         backgroundColor: '#FFFFFF',
         borderRadius: 12,

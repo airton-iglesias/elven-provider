@@ -160,26 +160,10 @@ const styles = StyleSheet.create({
         color: AppColors.external.text,
         fontWeight: 'bold',
     },
-    modalLabels: {
-        color: 'white',
-        fontSize: fontSize.labels.medium,
-    },
-    modalLabelTitle: {
-        color: 'white',
-        fontSize: fontSize.titles.large
-    },
+
     modalRow: {
         width: '100%',
         alignItems: 'center'
-    },
-    pixCodeText: {
-        backgroundColor: 'white',
-        padding: 15,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#D96A0B',
-        minHeight: 80,
-        textAlignVertical: 'center'
     },
     modalWarningContainer: {
         backgroundColor: '#FFE69C',

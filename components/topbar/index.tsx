@@ -1,5 +1,4 @@
-import { View, StyleSheet, Text, TouchableOpacity, Image } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { fontSize } from "@/constants/fonts";
 import { router } from "expo-router";
@@ -38,19 +37,5 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10
-    },
-    profileCircle: {
-        width: 35,
-        height: 35,
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: '#FFA500',
-        backgroundColor: '#FFFFFF',
-        marginLeft: 16,
-    },
-    profileImage:{
-        width: '100%',
-        height: '100%',
-        borderRadius: 999,
     }
 });

@@ -190,9 +190,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: AppColors.external.primary
     },
-    modalBackground: {
-        backgroundColor: '#0D3A75'
-    },
     content: {
         flex: 1,
         paddingHorizontal: 20,

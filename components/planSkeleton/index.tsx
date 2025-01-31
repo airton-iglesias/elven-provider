@@ -29,49 +29,12 @@ export default function PlanSkeleton() {
 
 
 const styles = StyleSheet.create({
-    header: {
-        width: '100%',
-        height: 60,
-        justifyContent: 'center',
-    },
-    headerText: {
-        fontSize: fontSize.titles.medium,
-        fontWeight: 'bold',
-        color: '#000',
-        textAlign: 'left',
-    },
     card: {
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 16,
         borderWidth: 1,
         borderColor: AppColors.internal.border,
-    },
-    cardPayment: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 16,
-        elevation: 2,
-        borderColor: AppColors.internal.border,
-        borderWidth: 1,
-    },
-    cardPartWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    cardIcon: {
-        width: 60,
-        height: 60,
-        backgroundColor: '#15803D',
-        borderRadius: 999,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    rowPayment: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
     },
     row: {
         flexDirection: 'row',
@@ -89,16 +52,4 @@ const styles = StyleSheet.create({
         gap: 5,
         marginBottom: 10
     },
-    statusButton: {
-        backgroundColor: '#15803D',
-        paddingVertical: 6,
-        borderRadius: 999,
-        alignItems: 'center',
-        marginBottom: 12,
-        marginTop: 3,
-        width: 70,
-        height: 25,
-        justifyContent: 'center',
-    },
-
 })

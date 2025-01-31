@@ -197,45 +197,6 @@ const styles = StyleSheet.create({
         fontSize: fontSize.titles.medium,
         fontWeight: "bold",
     },
-    profileHeader: {
-        alignItems: "center",
-        marginBottom: 35,
-    },
-    image: {
-        height: 128,
-        width: 128,
-        borderWidth: 1,
-        borderColor: '#D1D5DB',
-        backgroundColor: '#E5E7EB',
-        padding: 52,
-        borderRadius: 64,
-    },
-    cameraIconContainer: {
-        position: 'absolute',
-        bottom: -16,
-        right: -8,
-        width: 48,
-        height: 48,
-        backgroundColor: '#E5E7EB',
-        borderWidth: 4,
-        borderColor: '#F8F9FA',
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    cameraIcon: {
-        position: "absolute",
-        bottom: -5,
-        right: -5,
-        backgroundColor: "#fff",
-        borderRadius: 50,
-        padding: 4,
-        borderWidth: 1,
-        borderColor: "#ccc",
-    },
-    cameraText: {
-        fontSize: 12,
-    },
     section: {
         marginBottom: 24,
     },
@@ -258,15 +219,5 @@ const styles = StyleSheet.create({
     value: {
         fontSize: fontSize.labels.medium,
         color: "#000",
-    },
-    row: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-    },
-    changeLink: {
-        fontSize: fontSize.labels.medium,
-        color: AppColors.internal.button,
-        fontWeight: "bold",
     },
 });

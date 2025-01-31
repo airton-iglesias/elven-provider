@@ -5,39 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fontSize } from '@/constants/fonts';
 import { AppColors } from '@/constants/colors';
-import { router } from 'expo-router';
 import PlanSkeleton from '@/components/planSkeleton';
-import BillSkeleton from '@/components/billSkeketon';
 import TopBar from '@/components/topbar';
-import BillCard from '@/components/billCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import InformativeModal from '@/components/informativeModal';
-import { MIKWEB_TOKEN } from '@/constants/tokens';
-
 
 export default function Home() {
-    const [currentInvoice, setCurrentInvoice] = useState<any>(null);
     const [userDatas, setUserDatas] = useState<any>(null);
 
     // Variáveis de UI
     const [isLoading, setIsLoading] = useState(true);
-    const [informativeModalText, setInformativeModalText] = useState<string>('');
-    const [isFirstMonth, setIsFirstMonth] = useState<boolean>(false);
-    const [isInformativeModalVisible, setIsInformativeModalVisible] = useState<boolean>(false);
-    const [overdueCount, setOverdueCount] = useState<number>(0);
-
-    const filterInvoices = (billings: any[]) => {
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth() + 1;
-
-        const filteredBillings = billings.filter((item) => {
-            const [year, month] = item.due_day.split('-').map(Number);
-            return (year < currentYear) || (year === currentYear && month <= currentMonth);
-        });
-
-        return filteredBillings;
-    };
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -48,27 +24,6 @@ export default function Home() {
                 const userStoredDatas = getData ? JSON.parse(getData) : null;
                 setUserDatas(userStoredDatas);
 
-                const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings?customer_id=${userStoredDatas.id}&sort_field=due_day&sort_direction=desc`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `${MIKWEB_TOKEN}`
-                    }
-                });
-
-                if (!response.ok) { throw new Error("Erro na requisição"); }
-
-                const result = await response.json();
-                const filtered = filterInvoices(result.billings);
-                const overdueInvoicesCount = filtered.filter(invoice => invoice.situation_id === 2).length;
-                setOverdueCount(overdueInvoicesCount);
-
-                if (filtered.length > 0) {
-                    setCurrentInvoice(filtered[0]);
-                } else {
-                    setCurrentInvoice([]);
-                    setIsFirstMonth(true)
-                }
             } catch (error) {
                 console.error('Erro ao carregar dados iniciais:', error);
             } finally {
@@ -79,43 +34,15 @@ export default function Home() {
         fetchInitialData();
     }, []);
 
-    const firstMonthInformative = () => {
-        setInformativeModalText(`Esse é o seu primeiro mês de contrato. Portanto, você ainda não tem histórico de pagamentos ou detalhes de faturas.`);
-        setIsInformativeModalVisible(true);
-    }
 
 
     return (
-        <SafeAreaView style={[{ flex: 1 }, isInformativeModalVisible ? { backgroundColor: '#0D3A75' } : { backgroundColor: AppColors.external.primary }]}>
+        <SafeAreaView style={[{ flex: 1,  backgroundColor: AppColors.external.primary  }]}>
             <TopBar />
             {/* Seção de Pagamento */}
-            <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24, backgroundColor: '#F5F5F5' }}>
-                <View style={{ top: -20 }}>
-                    <View style={styles.header}>
-                        <Text style={styles.headerText}>{'Pagamento'}</Text>
-                    </View>
-
-                    {isLoading ? (<BillSkeleton />) : (
-                        <View style={{ height: 100 }}>
-                            <BillCard
-                                item={currentInvoice}
-                                plan={userDatas?.plan?.name || ''}
-                                status={currentInvoice.situation_id || 3}
-                                showStatus={false}
-                                iconStatus
-                                chevron
-                                type={'default'}
-                                overdueCount={overdueCount}
-                                isFirstMonth={isFirstMonth}
-                                firstMonthInformative={firstMonthInformative}
-                                onPress={() => router.push({ pathname: '/paymentDetails', params: { id: currentInvoice.id } })}
-                            />
-                        </View>
-                    )}
-                </View>
-
+            <View style={styles.homeWrapper}>
                 {/* Seção do Plano */}
-                <View style={{ top: -20 }}>
+                <View >
                     <View style={styles.header}>
                         <Text style={styles.headerText}>{'Seu plano'}</Text>
                     </View>
@@ -130,7 +57,7 @@ export default function Home() {
                                 <View style={styles.labelsWrapper}>
                                     <Text style={styles.title}>Fibra - {userDatas?.plan?.name}</Text>
                                     <Text style={styles.subtitle}>
-                                        R$ {parseFloat(userDatas?.plan?.value).toFixed(2)} / mês
+                                        R$ {(parseFloat(userDatas?.plan?.value) - parseFloat(userDatas?.monthly_discount || 0)).toFixed(2)} / mês
                                     </Text>
                                     <View style={[styles.statusButton, userDatas?.msg_payment_mk === 'L' ? { backgroundColor: '#15803D' } : { backgroundColor: '#DC2626' }]}>
                                         <Text style={styles.statusText}>{userDatas?.msg_payment_mk === 'L' ? 'Ativo' : 'Bloqueado'}</Text>
@@ -145,26 +72,26 @@ export default function Home() {
                 </View>
             </View>
 
-            <InformativeModal
-                isModalVisible={isInformativeModalVisible}
-                setIsModalVisible={setIsInformativeModalVisible}
-                text={informativeModalText}
-            />
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
+    homeWrapper: {
+        flex: 1,
+        paddingHorizontal: 20,
+        backgroundColor: '#f5f5f5',
+        paddingTop: 24,
+    },
     header: {
-        width: '100%',
-        height: 60,
-        justifyContent: 'center',
+        marginBottom: 20,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
     },
     headerText: {
         fontSize: fontSize.titles.medium,
-        fontWeight: 'bold',
-        color: '#000',
-        textAlign: 'left',
+        fontWeight: "bold",
     },
     card: {
         backgroundColor: '#FFFFFF',
@@ -172,32 +99,6 @@ const styles = StyleSheet.create({
         padding: 16,
         borderWidth: 1,
         borderColor: AppColors.internal.border,
-    },
-    cardPayment: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 16,
-        elevation: 2,
-        borderColor: AppColors.internal.border,
-        borderWidth: 1,
-    },
-    cardPartWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    cardIcon: {
-        width: 60,
-        height: 60,
-        backgroundColor: '#15803D',
-        borderRadius: 999,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    rowPayment: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
     },
     row: {
         flexDirection: 'row',

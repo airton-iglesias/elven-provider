@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, ToastAndroid, TouchableOpacity, View } from 'react-native';
+import { Linking, StyleSheet, Text, ToastAndroid, TouchableOpacity, View } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fontSize } from '@/constants/fonts';
@@ -19,6 +19,7 @@ import BillSkeleton from '@/components/billSkeketon';
 import { Skeleton } from 'moti/skeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MIKWEB_TOKEN } from '@/constants/tokens';
+import WarningIcon from '@/assets/icons/warningIcon';
 
 export default function PaymentDetails() {
     const { id } = useLocalSearchParams();
@@ -64,29 +65,49 @@ export default function PaymentDetails() {
         fetchInitialData();
     }, []);
 
-    // Função para baixar a fatura
-    const downloadInvoice = async (): Promise<void> => {
-        setInformativeModalText(`A 2º via da última fatura está sendo baixada, verifique os seus arquivos.`);
-        setIsInformativeModalVisible(true);
-    };
 
-    // Função para compartilhar a fatura
-    const shareInvoice = async (): Promise<void> => {
-        if (!currentInvoice) {
+
+    const downloadInvoice = async (): Promise<void> => {
+        if (!currentInvoice?.integration_link) {
+            ToastAndroid.show('O link para download não está disponível.', ToastAndroid.SHORT);
             return;
         }
 
         try {
-            const fileUri: string = FileSystem.cacheDirectory + `${id}.pdf`;
+            Linking.openURL(currentInvoice.integration_link);
+            setInformativeModalText(`A 2ª via da última fatura está sendo baixada. Verifique seus arquivos.`);
+            setIsInformativeModalVisible(true);
+        } catch (error) {
+            console.error('Erro ao abrir o link da fatura:', error);
+            ToastAndroid.show('Não foi possível baixar a fatura.', ToastAndroid.SHORT);
+        }
+    };
 
-            await FileSystem.writeAsStringAsync(fileUri, 'fakePdfContent', { encoding: FileSystem.EncodingType.Base64 });
+
+    // Função para compartilhar a fatura
+
+    const shareInvoice = async (): Promise<void> => {
+        if (!currentInvoice?.integration_link) {
+            ToastAndroid.show('O link da fatura não está disponível.', ToastAndroid.SHORT);
+            return;
+        }
+
+        try {
+            const fileUri: string = FileSystem.cacheDirectory + `${currentInvoice.id}.pdf`;
+
+            // Baixar o arquivo remoto e salvar localmente
+            const downloadResult = await FileSystem.downloadAsync(
+                currentInvoice.integration_link,
+                fileUri
+            );
 
             if (!(await Sharing.isAvailableAsync())) {
                 ToastAndroid.show('O compartilhamento não está disponível no seu dispositivo.', ToastAndroid.SHORT);
                 return;
             }
 
-            await Sharing.shareAsync(fileUri);
+            await Sharing.shareAsync(downloadResult.uri);
+
             ToastAndroid.show('Fatura compartilhada com sucesso!', ToastAndroid.SHORT);
         } catch (error) {
             console.error('Erro ao compartilhar a fatura:', error);
@@ -95,45 +116,28 @@ export default function PaymentDetails() {
     };
 
     const penaltyRate = 0.02;
-    const monthlyInterestRate = 0.0025;
 
-    const calculateInterest = (dueDate: any = new Date(), paymentDate: any = new Date(), value: number): number => {
-        if (paymentDate <= dueDate) { return 0; }
-        const daysLate = ((paymentDate - dueDate) / 86400000) / 30;
-        const interest = (Math.trunc((value * monthlyInterestRate * daysLate) * 100) / 100);
-        return interest;
-    };
+    const InvoiceDetails = (invoice: any) => {
+        if (invoice?.value_paid && invoice?.value_paid > invoice?.value) {
+            const penalty = penaltyRate * invoice.value;
+            const interest = invoice.value_paid - invoice.value - penalty;
 
-    const calculateInvoiceDetails = (currentInvoice: any | null) => {
-        if (!currentInvoice) { return { totalAmount: 0, interest: 0, penalty: 0 }; }
-
-        const { value, due_day, date_payment } = currentInvoice;
-
-        if (!due_day || isNaN(new Date(due_day).getTime())) { return { totalAmount: 0, interest: 0, penalty: 0 }; }
-
-        const dueDate = new Date(due_day);
-        const paymentDate = date_payment ? new Date(date_payment) : new Date();
-
-        if (isNaN(dueDate.getTime())) { return { totalAmount: 0, interest: 0, penalty: 0 }; }
-
-        let penalty = 0.00;
-        let interest = 0.00;
-
-        if (paymentDate > dueDate) {
-            penalty = value * penaltyRate;
-            interest = calculateInterest(dueDate, paymentDate, value);
+            return {
+                totalAmount: invoice?.value_paid,
+                penalty,
+                interest,
+            }
         }
 
-        const totalWithInterestAndPenalty = value + interest + penalty;
-
         return {
-            totalAmount: Math.trunc(totalWithInterestAndPenalty * 100) / 100,
-            interest: interest,
-            penalty: Math.trunc(penalty * 100) / 100,
-        };
-    };
+            totalAmount: invoice?.value_paid || 0,
+            penalty: 0,
+            interest: 0,
+        }
+    }
 
-    const { totalAmount, interest, penalty } = calculateInvoiceDetails(currentInvoice);
+
+    const { totalAmount, penalty, interest }: any = InvoiceDetails(currentInvoice);
 
 
 
@@ -184,6 +188,24 @@ export default function PaymentDetails() {
                         )
                     )}
 
+                    {/* Dia do vencimento */}
+                    <View style={styles.expirationContainer}>
+                        <TouchableOpacity
+                            style={styles.expirationButton}
+                            activeOpacity={0.7}
+                            disabled={true}
+                        >
+                            <View style={{ gap: 5 }}>
+                                <Text style={styles.expirationTitle}>Dia do vencimento:</Text>
+                                {isLoading ? (
+                                    <Skeleton width={100} height={20} radius={8} colorMode="light" />
+                                ) : (
+                                    <Text style={styles.expirationSubtitle}>{currentInvoice?.due_day.split("-").reverse().join("/")}</Text>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+
                     {/* Detalhes da fatura */}
                     <Text style={styles.sectionTitle}>Detalhes da fatura</Text>
 
@@ -192,44 +214,52 @@ export default function PaymentDetails() {
                             <Text style={styles.detailsText}>Valor da mensalidade</Text>
                             {isLoading ?
                                 <Skeleton width={80} height={24} colorMode='light' />
-                                : <Text style={styles.detailsText}>  R$ {parseFloat(userDatas?.plan.value).toFixed(2)}</Text>
+                                : <Text style={styles.detailsText}>  R$ {currentInvoice?.value.toFixed(2).toString().replace('.', ',')}</Text>
                             }
                         </View>
 
-                        <View style={styles.detailsRow}>
-                            <Text style={styles.detailsText}>Multa</Text>
-                            {isLoading ?
-                                <Skeleton width={80} height={24} colorMode='light' />
-                                : <Text style={styles.detailsText}>R$ {penalty.toFixed(2)}</Text>
-                            }
-                        </View>
-
-                        <View style={styles.detailsRow}>
-                            <Text style={styles.detailsText}>Juros</Text>
-                            {isLoading ?
-                                <Skeleton width={80} height={24} colorMode='light' />
-                                : <Text style={styles.detailsText}>R$ {interest.toFixed(2)}</Text>
-                            }
-                        </View>
-                        {userDatas?.monthly_discount && (
+                        {currentInvoice?.situation_id === 3 && (
                             <View style={styles.detailsRow}>
-                                <Text style={styles.detailsText}>Descontos</Text>
+                                <Text style={styles.detailsText}>Multa</Text>
                                 {isLoading ?
                                     <Skeleton width={80} height={24} colorMode='light' />
-                                    : <Text style={styles.detailsText}>R$ -{userDatas?.monthly_discount.toFixed(2)}</Text>
+                                    : <Text style={styles.detailsText}>R$ {penalty.toFixed(2).toString().replace('.', ',')}</Text>
                                 }
                             </View>
                         )}
 
-                        <View style={[styles.detailsRow, { borderBottomWidth: 0 }]}>
-                            <Text style={styles.detailsText}>Valor total</Text>
-                            {isLoading ?
-                                <Skeleton width={80} height={24} colorMode='light' />
-                                :
-                                <Text style={styles.detailsText}>R$ {totalAmount.toFixed(2)}</Text>
-                            }
-                        </View>
+                        {currentInvoice?.situation_id === 3 && (
+                            <View style={styles.detailsRow}>
+                                <Text style={styles.detailsText}>Juros</Text>
+                                {isLoading ?
+                                    <Skeleton width={80} height={24} colorMode='light' />
+                                    : <Text style={styles.detailsText}>R$ {interest.toFixed(2).toString().replace('.', ',')}</Text>
+                                }
+                            </View>
+                        )}
+
+                        {currentInvoice?.situation_id == 3 && (
+                            <View style={[styles.detailsRow, { borderBottomWidth: 0 }]}>
+                                <Text style={styles.detailsText}>Valor Total</Text>
+                                {isLoading ?
+                                    <Skeleton width={80} height={24} colorMode='light' />
+                                    :
+                                    <Text style={styles.detailsText}>R$ {currentInvoice?.situation_id == 3 && totalAmount.toFixed(2).toString().replace('.', ',')}</Text>
+                                }
+                            </View>
+                        )}
                     </View>
+
+                    {currentInvoice?.situation_id === 2 && (
+                        <View style={styles.modalWarningContainer}>
+                            <View style={styles.modalWarningContent}>
+                                <WarningIcon />
+                                <Text style={styles.modalWarningText}>
+                                    {`Faturas pagas com atraso possuem acréscimo de R$ ${(currentInvoice?.value * penaltyRate).toFixed(2).toString().replace('.', ',')} de multa e juros de 0,25% ao mês.`}
+                                </Text>
+                            </View>
+                        </View>
+                    )}
                 </View>
             </View>
             {/* Modais */}
@@ -294,4 +324,40 @@ const styles = StyleSheet.create({
     detailsText: {
         fontSize: fontSize.labels.medium,
     },
+    modalWarningContainer: {
+        backgroundColor: '#FFE69C',
+        borderRadius: 10,
+        width: '100%',
+        padding: 20
+    },
+    modalWarningContent: {
+        width: '100%',
+        flexDirection: 'row',
+        gap: 10,
+        alignItems: 'center'
+    },
+    modalWarningText: {
+        flex: 1,
+        color: '#997404'
+    },
+    expirationContainer: {
+        paddingVertical: 15,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#E0E0E0',
+        marginTop: 10
+    },
+    expirationTitle: {
+        fontSize: fontSize.labels.large,
+        fontWeight: 'bold',
+    },
+    expirationSubtitle: {
+        fontSize: fontSize.labels.medium,
+    },
+    expirationButton: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+
 });

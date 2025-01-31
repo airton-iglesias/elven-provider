@@ -39,34 +39,6 @@ export default function Settings() {
                     </TouchableOpacity>
                 </View>
 
-                {/* <View style={styles.optionWrapper}>
-                    <TouchableOpacity style={styles.option} activeOpacity={0.7}>
-                        <View style={styles.iconWrapper}>
-                            <InformationsIcon />
-                        </View>
-                        <View style={styles.optionContent}>
-                            <Text style={styles.optionTitle}>Sobre nós</Text>
-                        </View>
-                        <View style={styles.actionIconWrapper}>
-                            <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
-                        </View>
-                    </TouchableOpacity>
-                </View> */}
-
-                {/* <View style={styles.optionWrapper}>
-                    <TouchableOpacity style={styles.option} activeOpacity={0.7}>
-                        <View style={styles.iconWrapper}>
-                            <LockIcon />
-                        </View>
-                        <View style={styles.optionContent}>
-                            <Text style={styles.optionTitle}>Privacidade</Text>
-                        </View>
-                        <View style={styles.actionIconWrapper}>
-                            <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
-                        </View>
-                    </TouchableOpacity>
-                </View> */}
-
                 <View style={styles.optionWrapper}>
                     <TouchableOpacity style={styles.option} activeOpacity={0.7} onPress={handleExit}>
                         <View style={styles.iconWrapper}>
@@ -93,7 +65,6 @@ const styles = StyleSheet.create({
         paddingTop: 24,
     },
     header: {
-
         marginBottom: 10,
         flexDirection: "row",
         justifyContent: "space-between",
