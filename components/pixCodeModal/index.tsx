@@ -4,6 +4,7 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet, ToastAndroid } from "r
 import * as Clipboard from 'expo-clipboard';
 import { useEffect, useState } from "react";
 import { Skeleton } from "moti/skeleton";
+import Feather from '@expo/vector-icons/Feather';
 
 
 export default function PixCodeModal({ isModalVisible, setIsModalVisible, id, value }: any) {
@@ -80,15 +81,24 @@ export default function PixCodeModal({ isModalVisible, setIsModalVisible, id, va
                             </View>
 
                             <View style={[styles.modalRow, { gap: 10 }]}>
-                                <Text style={styles.modalLabels}>Utilize o código Pix Copia e Cola abaixo para realizar o pagamento.</Text>
-                                <TouchableOpacity style={{ width: '100%' }} onPress={copyToClipboard} activeOpacity={0.7} disabled={isLoading}>
-                                    {isLoading ? <Skeleton colorMode="light" width={'100%'} height={110} radius={10} />
-                                        :
-                                        <Text style={styles.pixCodeText} selectable>
-                                            {pixData?.pix_copy_paste}
+                                <View style={styles.labelWrapper}>
+                                    <Text style={[styles.modalLabels]}>Utilize o código Pix Copia e Cola abaixo para realizar o pagamento.</Text>
+                                    <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard} activeOpacity={0.7} disabled={isLoading}>
+
+                                        <Feather name="copy" size={14} color="#fff" />
+                                        <Text style={{ color: '#fff' }}>
+                                            Copiar
                                         </Text>
-                                    }
-                                </TouchableOpacity>
+
+                                    </TouchableOpacity>
+                                </View>
+                                {isLoading ? <Skeleton colorMode="light" width={'100%'} height={110} radius={10} />
+                                    :
+                                    <Text style={styles.pixCodeText} selectable>
+                                        {pixData?.pix_copy_paste}
+                                    </Text>
+                                }
+
                             </View>
 
                             <TouchableOpacity
@@ -153,7 +163,8 @@ const styles = StyleSheet.create({
     },
     modalLabels: {
         color: 'white',
-        fontSize: fontSize.labels.medium
+        fontSize: fontSize.labels.medium,
+        flexShrink: 1
     },
     modalLabelTitle: {
         color: 'white',
@@ -168,6 +179,23 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#D96A0B'
+        borderColor: '#D96A0B',
+        width: '100%'
+    },
+    copyButton: {
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        flexDirection: 'row',
+        gap: 5,
+        backgroundColor: '#D96A0B',
+        padding: 8,
+        borderRadius: 5
+    },
+    labelWrapper: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        gap: 10
     }
 });
