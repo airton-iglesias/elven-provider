@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
         fontSize: fontSize.labels.mini,
         textAlign: 'center',
         marginTop: 8,
-        color: '#333',
+        color: '#555',
         width: 60,
     },
     button: {

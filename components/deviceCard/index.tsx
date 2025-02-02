@@ -3,7 +3,7 @@ import { AppColors } from "@/constants/colors";
 import { fontSize } from "@/constants/fonts";
 import { View, StyleSheet, Text } from "react-native";
 
-export default function DeviceCard({isActive, name, ip, mac}: any) {
+export default function DeviceCard({ isActive, name, ip, mac }: any) {
     return (
         <View style={styles.deviceCard}>
             <View style={styles.iconContainer}>
@@ -11,11 +11,11 @@ export default function DeviceCard({isActive, name, ip, mac}: any) {
             </View>
             <View style={styles.deviceInfo}>
                 <Text style={styles.deviceName}>{name}</Text>
-                <Text>IP: {ip}</Text>
-                <Text>Mac: {mac}</Text>
+                <Text style={{ color: '#888888' }}>IP: {ip}</Text>
+                <Text style={{ color: '#888888' }}>Mac: {mac}</Text>
             </View>
-            <View style={ isActive ? styles.statusBadgeActive : styles.statusBadgeInactive }>
-                <Text style={ isActive ? styles.statusTextActive : styles.statusTextInactive }>
+            <View style={isActive ? styles.statusBadgeActive : styles.statusBadgeInactive}>
+                <Text style={isActive ? styles.statusTextActive : styles.statusTextInactive}>
                     {isActive ? 'Ativo' : 'Inativo'}
                 </Text>
             </View>
@@ -26,14 +26,15 @@ export default function DeviceCard({isActive, name, ip, mac}: any) {
 
 const styles = StyleSheet.create({
     deviceCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFF',
-        borderRadius: 15,
-        padding: 15,
-        borderWidth: 1,
-        borderColor: AppColors.internal.border,
-        height: 100
+        backgroundColor: "#FFFFFF",
+        borderRadius: 12,
+        padding: 16,
+        elevation: 2,
+        flexDirection: "row",
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "space-between",
+        height: 100,
     },
     iconContainer: {
         width: 60,
@@ -53,28 +54,27 @@ const styles = StyleSheet.create({
         fontWeight: 'bold'
     },
     statusBadgeActive: {
-        marginTop: 8,
         backgroundColor: '#15803D',
         borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 15,
         paddingVertical: 4,
-        paddingHorizontal: 8,
-        width: 75,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignSelf: 'center',
     },
     statusTextActive: {
         fontSize: fontSize.labels.medium,
         color: '#FFF',
     },
     statusBadgeInactive: {
-        marginTop: 8,
         backgroundColor: '#DC2626',
         borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 15,
         paddingVertical: 4,
-        paddingHorizontal: 8,
-        width: 75,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignSelf: 'center',
+
     },
     statusTextInactive: {
         fontSize: fontSize.labels.medium,

@@ -1,8 +1,7 @@
 import { AppColors } from "@/constants/colors";
-import { fontSize } from "@/constants/fonts";
 import React from "react";
 import { Skeleton } from 'moti/skeleton'
-import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
+import { View, StyleSheet } from "react-native";
 
 export default function PlanSkeleton() {
     return (

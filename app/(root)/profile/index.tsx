@@ -4,7 +4,6 @@ import { AntDesign } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { fontSize } from "@/constants/fonts";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppColors } from "@/constants/colors";
 import { Skeleton } from "moti/skeleton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -184,7 +183,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#fff",
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
     },
     headerContainer: {
         marginTop: 25,
@@ -218,6 +217,6 @@ const styles = StyleSheet.create({
     },
     value: {
         fontSize: fontSize.labels.medium,
-        color: "#000",
+        color: "#555",
     },
 });

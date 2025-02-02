@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList } from 'react-native';
+import { StyleSheet, Text, View, SectionList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fontSize } from '@/constants/fonts';
 import { AppColors } from '@/constants/colors';
@@ -9,12 +9,12 @@ import BillCard from '@/components/billCard';
 import BillSkeleton from '@/components/billSkeketon';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MIKWEB_TOKEN } from '@/constants/tokens';
-
+import Animated, { SlideInRight } from 'react-native-reanimated';
 
 export default function Payment() {
-    const [userPlan, setUserPlan] = useState<any>(null);
-    const [billings, setBillings] = useState<any>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [userPlan, setUserPlan] = useState(null);
+    const [billings, setBillings] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -36,14 +36,24 @@ export default function Payment() {
                     }
                 });
 
-                if (!response.ok) { throw new Error("Erro na requisição"); }
+                if (!response.ok) {
+                    throw new Error("Erro na requisição");
+                }
 
                 const result = await response.json();
 
                 if (result.billings.length > 0) {
-                    setBillings(result.billings);
+                    const paidBills = result.billings.filter((bill: any) => bill.situation_id === 3);
+
+                    let openBills = result.billings.filter((bill: any) => bill.situation_id !== 3);
+
+                    openBills.sort((a: any, b: any) => new Date(a.due_day).getTime() - new Date(b.due_day).getTime());
+                    setBillings({
+                        open: openBills,
+                        paid: paidBills,
+                    });
                 } else {
-                    setBillings([]);
+                    setBillings(null);
                 }
             } catch (error) {
                 console.error('Erro ao carregar dados iniciais:', error);
@@ -59,40 +69,43 @@ export default function Payment() {
         <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.external.primary }}>
             <TopBar />
 
-            <View style={{ flex: 1, backgroundColor: '#F5F5F5', paddingTop: 24 }}>
-                <View style={{ paddingHorizontal: 20, gap: 20, flex: 1 }}>
-
-                    {/* Histórico de pagamentos */}
-                    <Text style={styles.sectionTitle}>Suas Faturas</Text>
+            <View style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
+                <View style={{ gap: 20, flex: 1 }}>
 
                     {isLoading ? (
-                        <View style={{ gap: 15 }}>
+                        <View style={{ gap: 15, paddingHorizontal: 20, paddingTop: 24 }}>
                             <BillSkeleton />
                             <BillSkeleton />
                             <BillSkeleton />
                             <BillSkeleton />
                         </View>
                     ) : (
-                        billings.length > 0 ? (
-                            <FlatList
+                        billings.open.length > 0 ? (
+                            <SectionList
+                                sections={[
+                                    { title: 'Faturas em aberto', data: billings.open },
+                                    { title: 'Histórico de pagamento', data: billings.paid }
+                                ]}
                                 keyExtractor={(item) => item.id}
-                                data={billings}
-                                showsVerticalScrollIndicator={false}
-                                contentContainerStyle={{ paddingBottom: 20, gap: 15 }}
-                                renderItem={({ item }) => {
-                                    return (
+                                renderSectionHeader={({ section: { title } }) => (
+                                    <Text style={styles.sectionTitle}>{title}</Text>
+                                )}
+                                renderItem={({ item, index }) => (
+                                    <Animated.View entering={SlideInRight.duration((index * 100) + 300)}>
                                         <BillCard
                                             item={item}
-                                            plan={userPlan || ''}
-                                            onPress={() => { router.push({ pathname: '/paymentDetails', params: { id: item.id } }) }}
+                                            onCardPress={() => {
+                                                router.push({
+                                                    pathname: '/paymentDetails',
+                                                    params: { id: item.id }
+                                                });
+                                            }}
                                             status={item.situation_id}
-                                            iconStatus={false}
-                                            showStatus
-                                            chevron
-                                            type={'history'}
                                         />
-                                    );
-                                }}
+                                    </Animated.View>
+                                )}
+                                contentContainerStyle={{ paddingBottom: 20, gap: 15, paddingHorizontal: 20, paddingTop: 24 }}
+                                showsVerticalScrollIndicator={false}
                             />
                         ) : (
                             <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, paddingBottom: 80 }}>
@@ -104,13 +117,13 @@ export default function Payment() {
             </View>
         </SafeAreaView>
     );
-};
+}
 
 const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: fontSize.titles.medium,
         fontWeight: 'bold',
-        color: '#333333',
+        color: '#000',
     },
     billsText: {
         color: '#000',

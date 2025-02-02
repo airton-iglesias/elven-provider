@@ -10,6 +10,8 @@ export default function DeviceSkeleton() {
             </View>
             <View style={styles.deviceInfo}>
                 <Skeleton colorMode="light" width={100} height={20} />
+                <Skeleton colorMode="light" width={130} height={20} />
+                <Skeleton colorMode="light" width={100} height={20} />
             </View>
             <Skeleton colorMode="light" width={100} height={20} />
         </View>
@@ -24,8 +26,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
         borderRadius: 15,
         padding: 15,
-        borderWidth: 1,
-        borderColor: AppColors.internal.border,
+        elevation: 2,
         height: 100
     },
     iconContainer: {
@@ -39,6 +40,7 @@ const styles = StyleSheet.create({
     deviceInfo: {
         flex: 1,
         marginLeft: 15,
+        gap: 5
     },
 });
 

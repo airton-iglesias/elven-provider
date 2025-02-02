@@ -20,6 +20,7 @@ interface InputProps {
     customLabelColor?: string;
     customFontSize?: number;
     errorColor?: string;
+    customHeight?: number;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -38,6 +39,7 @@ const Input: React.FC<InputProps> = ({
     customBackground,
     customLabelColor,
     customFontSize,
+    customHeight,
     ...rest
 }) => {
     const [isInputFocus, setIsInputFocus] = React.useState(false);
@@ -81,7 +83,8 @@ const Input: React.FC<InputProps> = ({
                         customPaddingLeft ? { paddingLeft: customPaddingLeft } : null,
                         customColor ? { color: customColor } : { color: '#212529' },
                         customBackground ? { backgroundColor: customBackground } : null,
-                        customFontSize ? { fontSize: customFontSize }: { fontSize: fontSize.labels.extralarge },
+                        customFontSize ? { fontSize: customFontSize } : { fontSize: fontSize.labels.extralarge },
+                        customHeight ? { height: customHeight } : null,
                     ]}
                 />
                 {type === 'password' && (
@@ -97,7 +100,7 @@ const Input: React.FC<InputProps> = ({
                     </TouchableOpacity>
                 )}
             </View>
-            {error && <Text style={[styles.errorText, errorColor ? {color: errorColor} : {color:'#B02A37'}]}>{error}</Text>}
+            {error && <Text style={[styles.errorText, errorColor ? { color: errorColor } : { color: '#B02A37' }]}>{error}</Text>}
         </View>
     );
 };

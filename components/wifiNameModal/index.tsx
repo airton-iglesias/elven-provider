@@ -3,7 +3,7 @@ import { fontSize } from "@/constants/fonts";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import Input from "../input";
 import { Controller, useForm } from "react-hook-form";
-import React, { useState } from "react";
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getWifiNameSchema, WifiNameData } from "@/schemas/wifiSchemas";
 import WarningIcon from "@/assets/icons/warningIcon";
@@ -64,7 +64,7 @@ export default function WifiNameModal({ isModalVisible, setIsModalVisible, isNam
                                             label={"Digite o novo nome do Wi-fi"}
                                             onChange={(text) => onChange(text)}
                                             onBlur={onBlur}
-                                            
+
                                             error={errors.name?.message}
                                             maxLength={32}
                                             customLabelColor='#fff'

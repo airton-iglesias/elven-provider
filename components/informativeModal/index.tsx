@@ -1,7 +1,6 @@
 import CheckIcon from "@/assets/icons/checkIcon";
 import { AppColors } from "@/constants/colors";
 import { fontSize } from "@/constants/fonts";
-import { Fontisto } from '@expo/vector-icons';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
 export default function InformativeModal({ isModalVisible, setIsModalVisible, text }: any) {
@@ -30,7 +29,7 @@ export default function InformativeModal({ isModalVisible, setIsModalVisible, te
 
                             <View style={{ width: '100%', alignItems: 'center' }}>
                                 <View style={styles.iconContainer}>
-                                    <CheckIcon/>
+                                    <CheckIcon />
                                 </View>
                             </View>
 

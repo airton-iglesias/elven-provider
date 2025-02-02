@@ -2,46 +2,13 @@ import { AppColors } from "@/constants/colors";
 import { fontSize } from "@/constants/fonts";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, ToastAndroid } from "react-native";
 import * as Clipboard from 'expo-clipboard';
-import { useEffect, useState } from "react";
-import { Skeleton } from "moti/skeleton";
 import Feather from '@expo/vector-icons/Feather';
 
 
-export default function BarCodeModal({ isModalVisible, setIsModalVisible, id }: any) {
-    const [barCodeData, setBarCodeData] = useState<any>(null);
-
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                setIsLoading(true);
-
-                const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings/${id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
-                    }
-                });
-
-                if (!response.ok) { throw new Error("Erro na requisição"); }
-
-                const result = await response.json();
-                setBarCodeData(result.billing);
-
-            } catch (error) {
-                console.error('Erro ao carregar dados iniciais:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchInitialData();
-    }, []);
+export default function BarCodeModal({ isModalVisible, setIsModalVisible, due_day, value, digitable_line }: any) {
 
     const copyToClipboard = async () => {
-        await Clipboard.setStringAsync(barCodeData.digitable_line);
+        await Clipboard.setStringAsync(digitable_line);
         ToastAndroid.show("Código de barras copiado!", ToastAndroid.SHORT);
     };
 
@@ -68,40 +35,33 @@ export default function BarCodeModal({ isModalVisible, setIsModalVisible, id }: 
                                 />
                             </View>
 
-                            <View style={[styles.modalRow, isLoading ? { gap: 5 } : null]}>
+                            <View style={styles.modalRow}>
                                 <Text style={styles.modalLabels}>Valor a ser pago:</Text>
-
-                                {isLoading ? <Skeleton colorMode="light" width={100} radius={4} />
-                                    : <Text style={styles.modalLabelTitle}>R$ {parseFloat(barCodeData?.value).toFixed(2)}</Text>
-                                }
-
-                                {isLoading ? <Skeleton colorMode="light" width={80} height={15} radius={4} />
-                                    : <Text style={styles.modalLabels}>Venc. {barCodeData?.due_day ? `${barCodeData?.due_day.substring(8, 10)}/${barCodeData?.due_day.substring(5, 7)}` : 'undefined'} | Boleto</Text>
-                                }
-
+                                <Text style={styles.modalLabelTitle}>R$ {value.toFixed(2).toString().replace('.', ',')}</Text>
+                                <Text style={styles.modalLabels}>Venc. {due_day ? `${due_day.substring(8, 10)}/${due_day.substring(5, 7)}` : 'undefined'} | Boleto</Text>
                             </View>
 
                             <View style={[styles.modalRow, { gap: 10 }]}>
 
                                 <View style={styles.labelWrapper}>
                                     <Text style={styles.modalLabels}>Utilize o código de barras abaixo para realizar o pagamento.</Text>
-                                    <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard} activeOpacity={0.7} disabled={isLoading}>
+                                </View>
 
+
+
+                                <View style={styles.barCodeWrapper}>
+                                    <Text style={styles.pixCodeText} selectable>
+                                        {digitable_line}
+                                    </Text>
+                                    <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard} activeOpacity={0.7}>
                                         <Feather name="copy" size={14} color="#fff" />
                                         <Text style={{ color: '#fff' }}>
                                             Copiar
                                         </Text>
-
                                     </TouchableOpacity>
                                 </View>
 
 
-                                {isLoading ? <Skeleton colorMode="light" width={'100%'} height={110} radius={10} />
-                                    :
-                                    <Text style={styles.pixCodeText} selectable>
-                                        {barCodeData?.digitable_line}
-                                    </Text>
-                                }
 
                             </View>
 
@@ -178,24 +138,31 @@ const styles = StyleSheet.create({
         width: '100%',
         alignItems: 'center'
     },
-    pixCodeText: {
-        backgroundColor: 'white',
+    barCodeWrapper: {
         padding: 15,
+        backgroundColor: '#fff',
         borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#D96A0B',
-        minHeight: 80,
+        position: 'relative',
+        width: '100%',
+        minHeight: 100,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    pixCodeText: {
         textAlignVertical: 'center',
         width: '100%',
     },
     copyButton: {
-        alignItems: 'center',
-        justifyContent: 'flex-end',
+        position: 'absolute',
+        alignSelf: 'flex-end',
         flexDirection: 'row',
         gap: 5,
         backgroundColor: '#D96A0B',
-        padding: 8,
-        borderRadius: 5
+        padding: 6,
+        borderRadius: 5,
+        borderTopEndRadius: 10,
+        top: 1,
+        right: 1
     },
     labelWrapper: {
         width: '100%',

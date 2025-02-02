@@ -3,10 +3,13 @@ import { z } from 'zod';
 export const getSignInSchema = () => {
   return z
     .object({
-      cpf_cnpj: z.string({ required_error: 'Campo obrigatório' }).refine(
-        (value) => value.replace(/\D/g, '').length === 11 || value.replace(/\D/g, '').length === 14, {
-        message: 'CPF/CNPJ inválido',
-      }),
+      cpf_cnpj: z.string()
+        .refine((value) => {
+          const cleaned = value.replace(/\D/g, '');
+          return cleaned.length === 11 || cleaned.length === 14;
+        }, {
+          message: 'CPF/CNPJ inválido',
+        }),
     })
     .required();
 };

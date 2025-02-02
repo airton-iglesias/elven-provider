@@ -34,8 +34,6 @@ export default function RequestError({ messageParts }: any) {
 const styles = StyleSheet.create({
     errorMessageContainer: {
         width: '100%',
-        paddingHorizontal: 15,
-        marginTop: 10,
     },
     errorMessageWrapper: {
         flexDirection: 'row',

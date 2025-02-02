@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import TopBar from '@/components/topbar';
 import HomeIcon from '@/assets/icons/homeIcon';
 import MoneyIcon from '@/assets/icons/moneyIcon';
 import WifiIcon from '@/assets/icons/wifiIcon';
@@ -31,13 +30,13 @@ export default function TabLayout() {
                 }}
             >
                 <Tabs.Screen
-                name="index/index"
-                options={{
-                    tabBarShowLabel: false,
-                    tabBarIcon: ({ focused }) => (
-                        <TabIconWithDot IconComponent={HomeIcon} focused={focused} />
-                    ),
-                }}
+                    name="index/index"
+                    options={{
+                        tabBarShowLabel: false,
+                        tabBarIcon: ({ focused }) => (
+                            <TabIconWithDot IconComponent={HomeIcon} focused={focused} />
+                        ),
+                    }}
                 />
                 <Tabs.Screen
                     name="payment/index"

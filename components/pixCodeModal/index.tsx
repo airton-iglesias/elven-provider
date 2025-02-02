@@ -2,45 +2,22 @@ import { AppColors } from "@/constants/colors";
 import { fontSize } from "@/constants/fonts";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, ToastAndroid } from "react-native";
 import * as Clipboard from 'expo-clipboard';
-import { useEffect, useState } from "react";
-import { Skeleton } from "moti/skeleton";
 import Feather from '@expo/vector-icons/Feather';
 
+type PixCodeModalProps = {
+    isModalVisible: boolean;
+    setIsModalVisible: (value: boolean) => void;
+    value: number;
+    pix_copy_paste: string;
+    due_day: string;
+};
 
-export default function PixCodeModal({ isModalVisible, setIsModalVisible, id, value }: any) {
-    const [pixData, setPixData] = useState<any>(null);
 
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+export default function PixCodeModal({ isModalVisible, setIsModalVisible, value, pix_copy_paste, due_day }: PixCodeModalProps) {
 
-
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const response = await fetch(`https://api.mikweb.com.br/v1/admin/billings/${id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ALPBKXMNQC:Q0I9WSDEBHWQBDA4PTRDNVSD5QKT3TCZ`
-                    }
-                });
-
-                if (!response.ok) { throw new Error("Erro na requisição"); }
-
-                const result = await response.json();
-                setPixData(result.billing);
-
-            } catch (error) {
-                console.error('Erro ao carregar dados iniciais:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchInitialData();
-    }, []);
 
     const copyToClipboard = async () => {
-        await Clipboard.setStringAsync(pixData?.pix_copy_paste);
+        await Clipboard.setStringAsync(pix_copy_paste);
         ToastAndroid.show("Código pix copiado!", ToastAndroid.SHORT);
     };
 
@@ -67,38 +44,29 @@ export default function PixCodeModal({ isModalVisible, setIsModalVisible, id, va
                                 />
                             </View>
 
-                            <View style={[styles.modalRow, isLoading ? { gap: 5 } : null]}>
+                            <View style={styles.modalRow}>
                                 <Text style={styles.modalLabels}>Valor a ser pago:</Text>
-
-                                {isLoading ? <Skeleton colorMode="light" width={100} radius={4} />
-                                    : <Text style={styles.modalLabelTitle}>R$ {value ? value : parseFloat(pixData?.value).toFixed(2)}</Text>
-                                }
-
-                                {isLoading ? <Skeleton colorMode="light" width={80} height={15} radius={4} />
-                                    : <Text style={styles.modalLabels}>Venc. {pixData?.due_day ? `${pixData?.due_day.substring(8, 10)}/${pixData?.due_day.substring(5, 7)}` : 'undefined'} | Pix</Text>
-                                }
-
+                                <Text style={styles.modalLabelTitle}>R$ {value.toFixed(2).toString().replace('.', ',')}</Text>
+                                <Text style={styles.modalLabels}>Venc. {due_day ? `${due_day.substring(8, 10)}/${due_day.substring(5, 7)}` : 'undefined'} | Pix</Text>
                             </View>
 
                             <View style={[styles.modalRow, { gap: 10 }]}>
                                 <View style={styles.labelWrapper}>
                                     <Text style={[styles.modalLabels]}>Utilize o código Pix Copia e Cola abaixo para realizar o pagamento.</Text>
-                                    <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard} activeOpacity={0.7} disabled={isLoading}>
+                                </View>
 
+                                <View style={styles.pixCodeWrapper}>
+                                    <Text style={styles.pixCodeText} selectable>
+                                        {pix_copy_paste}
+                                    </Text>
+
+                                    <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard} activeOpacity={0.7}>
                                         <Feather name="copy" size={14} color="#fff" />
                                         <Text style={{ color: '#fff' }}>
                                             Copiar
                                         </Text>
-
                                     </TouchableOpacity>
                                 </View>
-                                {isLoading ? <Skeleton colorMode="light" width={'100%'} height={110} radius={10} />
-                                    :
-                                    <Text style={styles.pixCodeText} selectable>
-                                        {pixData?.pix_copy_paste}
-                                    </Text>
-                                }
-
                             </View>
 
                             <TouchableOpacity
@@ -174,22 +142,31 @@ const styles = StyleSheet.create({
         width: '100%',
         alignItems: 'center'
     },
-    pixCodeText: {
-        backgroundColor: 'white',
+    pixCodeWrapper: {
         padding: 15,
+        backgroundColor: '#fff',
         borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#D96A0B',
-        width: '100%'
+        position: 'relative',
+        width: '100%',
+        minHeight: 120,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    pixCodeText: {
+        textAlignVertical: 'center',
+        width: '100%',
     },
     copyButton: {
-        alignItems: 'center',
-        justifyContent: 'flex-end',
+        position: 'absolute',
+        alignSelf: 'flex-end',
         flexDirection: 'row',
         gap: 5,
         backgroundColor: '#D96A0B',
-        padding: 8,
-        borderRadius: 5
+        padding: 6,
+        borderRadius: 5,
+        borderTopEndRadius: 10,
+        top: 1,
+        right: 1
     },
     labelWrapper: {
         width: '100%',

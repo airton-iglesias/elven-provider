@@ -1,4 +1,3 @@
-import { AppColors } from "@/constants/colors";
 import { Skeleton } from "moti/skeleton";
 import { View, StyleSheet } from "react-native";
 
@@ -27,9 +26,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 16,
-        elevation: 2,
-        borderColor: AppColors.internal.border,
-        borderWidth: 1,
+        elevation: 4,
     },
     cardPartWrapper: {
         flexDirection: 'row',

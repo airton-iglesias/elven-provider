@@ -1,7 +1,4 @@
-import { TouchableOpacity, View, StyleSheet, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { fontSize } from "@/constants/fonts";
-import { AppColors } from "@/constants/colors";
+import { View, StyleSheet } from "react-native";
 import { Skeleton } from "moti/skeleton";
 
 export default function NotificationSkeleton() {
@@ -39,7 +36,7 @@ export default function NotificationSkeleton() {
 
                 </View>
             </View>
-            
+
             <View style={styles.notificationItem}>
                 <View style={styles.notificationWrapper}>
                     <Skeleton width={60} height={60} radius={999} colorMode="light" />

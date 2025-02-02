@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Entypo } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
@@ -88,8 +88,8 @@ export default function Wifi() {
             });
 
             if (!response.ok) throw new Error(onErrorMessage);
--
-            setInformativeModalText(`${onErrorMessage}`);
+            -
+                setInformativeModalText(`${onErrorMessage}`);
 
         } catch (e) {
             if (!isConnected) return handleNetworkError();
@@ -133,28 +133,28 @@ export default function Wifi() {
                     <Text style={styles.headerText}>Configurações do Wi-Fi</Text>
                 </View>
 
-                <TouchableOpacity style={styles.option} onPress={() => setIsModalPasswordVisible(true)}>
+                <TouchableOpacity style={styles.option} onPress={() => setIsModalPasswordVisible(true)} activeOpacity={0.7}>
                     <View style={styles.iconContainer}>
                         <KeyIcon />
                     </View>
                     <Text style={styles.optionText}>Alterar senha do Wi-Fi</Text>
-                    <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
+                    <Entypo name="chevron-thin-right" size={24} color="#D96A0B" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.option} onPress={() => setIsModalNameVisible(true)}>
+                <TouchableOpacity style={styles.option} onPress={() => setIsModalNameVisible(true)} activeOpacity={0.7}>
                     <View style={styles.iconContainer}>
                         <EditIcon />
                     </View>
                     <Text style={styles.optionText}>Alterar nome do Wi-Fi</Text>
-                    <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
+                    <Entypo name="chevron-thin-right" size={24} color="#D96A0B" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.option} onPress={() => router.navigate('/devices')}>
+                <TouchableOpacity style={styles.option} onPress={() => router.navigate('/devices')} activeOpacity={0.7}>
                     <View style={styles.iconContainer}>
                         <DeviceIcon strokeColor="white" strokeOpacity={1} />
                     </View>
                     <Text style={styles.optionText}>Ver dispositivos conectados</Text>
-                    <Ionicons name="chevron-forward-outline" size={24} color="#D96A0B" />
+                    <Entypo name="chevron-thin-right" size={24} color="#D96A0B" />
                 </TouchableOpacity>
             </View>
 
@@ -206,13 +206,12 @@ const styles = StyleSheet.create({
     },
     option: {
         flexDirection: 'row',
+        height: 100,
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 15,
-        paddingHorizontal: 10,
+        padding: 16,
         borderRadius: 15,
-        borderWidth: 1,
-        borderColor: AppColors.internal.border,
+        elevation: 2,
         marginBottom: 15,
         backgroundColor: '#fff',
     },
@@ -224,5 +223,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    optionText: { flex: 1, marginLeft: 10, fontSize: fontSize.labels.medium, color: '#000' },
+    optionText: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: fontSize.labels.medium,
+        color: '#555'
+    },
 });
